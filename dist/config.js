@@ -3,11 +3,11 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const UserSettings = {
     // Listed as BOT but is actually a user
     // each "Setting" is a nice that will sit on the server and proxied through the websocket. 
-    nick: 'bot_test',
-    password: 'password',
-    realname: 'bot_test',
-    channels: ['#bot_test_channel'],
-    host: 'irc.freenode.net',
+    nick: 'bottomBitch',
+    password: 'sakura123',
+    realname: 'tadas_bnc_test',
+    channels: [{ name: 'tadas_test', key: "" }],
+    host: 'irc.p2p-network.net',
     port: 6667,
     auto_reconnect: false,
     auto_reconnect_wait: 10000,

@@ -11,6 +11,7 @@ import winston from 'winston';
 // TODO: Write typings for this.
 import { Client } from 'irc-framework';
 import UserSettings from './config';
+import { stat } from 'fs';
 
 const app = Express();
 
@@ -45,6 +46,8 @@ const io = new Server(httpServer, {
 
 const client = new Client();
 
+app.use('/static', Express.static('public'))
+
 app.get('/', (req, res) => {
     if (!client.connected)
         client.connect(UserSettings);
@@ -64,7 +67,9 @@ app.get('/', (req, res) => {
     });
 
     client.on('message', (event) => {
+        // TODO: This is for the POC - this should have a DTO and also is XSS vulnerable.
         logger.info({user: event.nick, channel: event.target, message: event.message} );
+        io.emit('chat:message', {user: event.nick, channel: event.target, message: event.message});
     });
 
     client.on('error', (event) => {
@@ -74,9 +79,22 @@ app.get('/', (req, res) => {
     res.send(client.connected);
 });
 
+app.get('/channel/joinall', (req, res) => {
+
+    var result = [];
+
+    for (let channel of UserSettings.channels) {
+        var channelObj = client.channel('#' + channel.name, channel.key );
+        channelObj.join();
+        result.push({channel: channel.name, status: "joined"});
+    }
+    res.send(result);
+});
+
 app.get('/channel/join/:channelName', (req, res) => {
     // TODO: Do we always need o build out a buffer ?
-    var channel = client.channel('#'+req.params.channelName);
+    
+    var channel = client.channel('#'+req.params.channelName, );
     channel.join();
 
     res.send('Joined channel : #' + req.params.channelName);

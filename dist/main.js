@@ -42,6 +42,7 @@ const io = new socket_io_1.Server(httpServer, {
     },
 });
 const client = new irc_framework_1.Client();
+app.use('/static', express_1.default.static('public'));
 app.get('/', (req, res) => {
     if (!client.connected)
         client.connect(config_1.default);
@@ -57,11 +58,21 @@ app.get('/', (req, res) => {
     });
     client.on('message', (event) => {
         logger.info({ user: event.nick, channel: event.target, message: event.message });
+        io.emit('chat:message', { user: event.nick, channel: event.target, message: event.message });
     });
     client.on('error', (event) => {
         console.log(event);
     });
     res.send(client.connected);
+});
+app.get('/channel/joinall', (req, res) => {
+    var result = [];
+    for (let channel of config_1.default.channels) {
+        var channelObj = client.channel('#' + channel.name, channel.key);
+        channelObj.join();
+        result.push({ channel: channel.name, status: "joined" });
+    }
+    res.send(result);
 });
 app.get('/channel/join/:channelName', (req, res) => {
     // TODO: Do we always need o build out a buffer ?
