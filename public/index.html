@@ -1,34 +1,79 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>POC - Websocket from IRC</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+        integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
     <script src="http://localhost:3000/socket.io/socket.io.js"></script>
     <!-- Jquery CDN -->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <!-- Axios CDN -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.1/axios.min.js"></script>    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.1/axios.min.js"></script>
 
     <script>
+        var selectedChannel = "tadas_test";
         var socket = io('http://localhost:3000');
-        socket.on('chat:message', function(data){
+        socket.on('chat:message', function (data) {
             console.log(data);
-            $('#messages').append('<li>'+data.channel+' : '+ data.user +' : '+ data.message +' </li>');
+            selectedChannel = data.channel;
+            $('#messages').append('<li>' + data.channel + ' : ' + data.user + ' : ' + data.message + ' </li>');
+        });
+
+        socket.on('channel:joined', function (data) {
+            console.log(data);
+            $('#users').empty();
+            $.each(data.users, function (index, user) {
+                $('#users').append('<li>' + user.nick + ' [' + user.modes + ']</li>');
+            });
+        });
+
+        $(document).ready(function () {
+            $('#message_send').click(function () {
+                var message = $('#message').val();
+                $('#message').val('');
+                $('#messages').append('<li>' + selectedChannel + ' : You : ' + message + ' </li>');
+                // Socket sent
+                socket.emit('client:message', {
+                    message: message,
+                    channel: selectedChannel
+                });
+
+                // TODO: We might use this instead of socket as it is more reliable
+                // Axios sent
+                // axios.post('http://localhost:3000/message/send', {
+                //     message: message,
+                //     channel: selectedChannel
+                // })
+                // .then(function (response) {
+                //     console.log(response);
+                // })
+                // .catch(function (error) {
+                //     console.log(error);
+                // });                
+            });
         });
     </script>
 
 </head>
+
 <body>
     <div class="container">
         <div class="row">
-            <div class="col-xs-6">
-                <ul class="list" id="messages">
-                    
-                </ul>
+            <div class="col">
+                <h3>IRC</h3>
+                <ul class="list" id="messages"></ul>
+                <div class="fixed-bottom">
+                    <div class="input-group input-group-sm mb-12">
+                    <input type="text" id="message" class="col" /><button class="btn btn-primary" id="message_send">Send</button>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <h3>Online Users</h3>
+                <ul class="list" id="users"></ul>
             </div>
         </div>
-    </div>
 </body>
-
 </html>
