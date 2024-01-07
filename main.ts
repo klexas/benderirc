@@ -49,7 +49,7 @@ const client = new Client();
 
 app.use('/static', Express.static('public'));
 
-app.get('/', (req, res) => {
+app.get('/connect', (req, res) => {
     if (!client.connected)
         client.connect(UserSettings);
 
@@ -120,6 +120,18 @@ app.get('/channel/join/:channelName', (req, res) => {
     });
 });
 
+app.post('/channel/join', (req, res) => {
+    var channel = client.channel('#' + req.body.channel, req.body.key);
+    channel.join();
+    channel.updateUsers(function() {
+        var users = channel.users;
+        socketConnections.forEach(socket => {
+            socket.emit('channel:joined', { channel: req.body.channel, users: users });
+        });
+        res.send('Joined channel : #' + req.body.channel);
+    });
+});
+
 app.get('/channel/list', (req, res) => {
     res.send(client.channelList);
 });
@@ -138,7 +150,7 @@ io.on('connection', (socket) => {
     socketConnections.push(socket);
     socket.on('client:message', (message) => {
         var channel = "tadas_test";
-        if(!message.channel) channel = message.channel;
+        if(message.channel) channel = message.channel;
         client.say('#' + channel, message.message);
         // client.say(channel, message.message);
         // Shadow message to self.

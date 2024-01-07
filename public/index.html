@@ -17,12 +17,13 @@
         var socket = io('http://localhost:3000');
         socket.on('chat:message', function (data) {
             console.log(data);
-            selectedChannel = data.channel;
+            // selectedChannel = data.channel;
             $('#messages').append('<li>' + data.channel + ' : ' + data.user + ' : ' + data.message + ' </li>');
         });
 
         socket.on('channel:joined', function (data) {
             console.log(data);
+            selectedChannel = data.channel;
             $('#users').empty();
             $.each(data.users, function (index, user) {
                 $('#users').append('<li>' + user.nick + ' [' + user.modes + ']</li>');
@@ -53,6 +54,33 @@
                 //     console.log(error);
                 // });                
             });
+
+            $('#connect').click(()=>{
+                // Make http request to http://localhost:3000/connect
+                axios.get('http://localhost:3000/connect').then((response)=>{
+                    console.log(response);
+                }).catch((error)=>{
+                    console.log(error);
+                });
+            });
+
+            $('#join_channel').click(()=>{
+                var channel = $('#channel').val();
+                var key = $('#key').val();
+                $('#channel').val('');
+                $('#key').val('');
+                // Make http request to http://localhost:3000/channel/join
+                axios.post('http://localhost:3000/channel/join', {
+                channel: channel,
+                key: key
+                }).then((response)=>{
+                    // Clear chat
+                    $('#messages').empty();
+                    selectedChannel = channel;
+                }).catch((error)=>{
+                    console.log(error);
+                });
+            });
         });
     </script>
 
@@ -60,6 +88,13 @@
 
 <body>
     <div class="container">
+        <button class="btn btn-primary" id="connect">Connect</button>
+        <hr />
+        <input type="text" id="channel" placeholder="channel"/>
+        <input type="text" id="key" placeholder="key (optional)" />
+        <button class="btn btn-primary" id="join_channel">Join Channel</button>
+        
+
         <div class="row">
             <div class="col">
                 <h3>IRC</h3>
