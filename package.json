@@ -3,9 +3,11 @@
   "version": "0.0.1",
   "description": "I'll build my own IrcAnywhere, with blackjack and hookers",
   "main": "main.js",
+  "type": "module",
   "scripts": {
-    "build": "tsc",
+    "build": "esbuild ./main.ts --bundle  --platform=node --packages=external --outfile=dist/main.js --format=esm ",
     "start": "tsc && node dist/main.js",
+    "esbuild": "esbuild ./main.ts --bundle  --platform=node --packages=external --outfile=dist/main.js --format=esm && nodemon dist/main.js",
     "dev": "tsc && nodemon dist/main.js",
     "lint": "eslint . --ext .ts",
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -22,6 +24,7 @@
     "express": "^4.18.2",
     "irc-framework": "^4.13.1",
     "mongodb": "^6.3.0",
+    "mongoose": "^8.6.4",
     "morgan": "^1.10.0",
     "socket.io": "^4.7.2",
     "winston": "^3.11.0"
@@ -31,6 +34,7 @@
     "@types/morgan": "^1.9.9",
     "@types/node": "^20.10.1",
     "@types/winston": "^2.4.4",
+    "eslint": "^9.11.1",
     "typescript": "^5.1.3"
   }
 }
