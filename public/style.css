@@ -1,0 +1,28 @@
+body {
+    background-color: rgb(24, 26, 27);
+    font-family: 'Roboto';
+}
+
+.main_container {
+    background-color: #d7d7d7;
+ }
+
+.main_container h3 {
+    padding: 0 10px 0 10px;
+}
+
+.channel_user_list {
+    background-color: rgb(110, 165, 195);
+   }
+      
+.channel_user_list ul {
+    list-style: none;
+}
+
+
+
+.channel_main {
+    background-color: #d7d7d7;
+    color: #000;
+    min-height: 100%;
+}

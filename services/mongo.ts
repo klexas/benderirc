@@ -9,23 +9,29 @@ const MongooseDal = {
     },
     createChannel: async (channel: IChannel) => {
         // Create only if the channel doesn't have the same name
-        const existingChannel = await Channel.findOne({ name: channel.name });
+        const existingChannel = await Channel.findOne({ name: channel.name, owner: channel.owner });
         if (existingChannel) {
-            throw new Error("Channel already exists");
+            console.log("Channel already exists");
+            return;
         }
-        await MongooseDal.connect();
         return await Channel.create(channel);
     },
     getChannels: async () => {
-        await MongooseDal.connect();
         return await Channel.find();
     },
     getChannelByName: async (name: string) => {
         return await Channel.findOne({ name });
     },
     addMessage: async (channelName: string, message: IMessage) => {
-        await MongooseDal.connect();
+        // If the channel selected is not active ignore
+        const channel = await Channel.findOne({ name: channelName });
+        if (!channel || !channel.active) 
+            return;
+
         return Channel.updateOne( { name: channelName }, { $push: { messages: message }, updated_at: new Date() });
+    },
+    getChannelsForUser: async (username: string) => {
+       return await Channel.find({ owner: username, active: true }, { messages: 1, name: 1, updated_at: 1 });
     }
 };
 

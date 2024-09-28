@@ -14,6 +14,7 @@ interface IChannel {
     created_at: Date;
     updated_at: Date;
     messages: Array<IMessage>;
+    active: boolean;
 }
 
 // Channel Schema
@@ -23,7 +24,8 @@ const channelSchema = new Schema<IChannel>({
     created_at: { type: Date, default: Date.now },
     updated_at: { type: Date, default: Date.now },
     owner: { type: String, required: true },
-    messages: { type: [new Schema<IMessage>({ sender: String, message: String, created_at: { type: Date, default: Date.now } })], default: [] }
+    messages: { type: [new Schema<IMessage>({ sender: String, message: String, created_at: { type: Date, default: Date.now } })], default: [] },
+    active: { type: Boolean, default: true }
 });
 
 const Channel = model<IChannel>('Channel', channelSchema);

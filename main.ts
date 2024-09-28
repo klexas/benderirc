@@ -4,15 +4,8 @@ import { Server } from "socket.io";
 import Cors from "cors";
 import morgan from "morgan";
 import winston from "winston";
-
-// TODO: Move MongoDB actions etc to a writing gateway.
-//import MongoDb from 'mongodb';
-// Note : There is support for the webIRC protocol. This can allow with support bots.
-// TODO: Write typings for this.
 import { Client } from "irc-framework";
 import UserSettings from "./config";
-
-// MonogooseDal
 import MongooseDal from "./services/mongo";
 import { IChannel, IMessage } from "./models/channel";
 
@@ -24,6 +17,7 @@ MongooseDal.connect().then(
     console.log(err);
   }
 );
+let socketConnections = [];
 
 const app = Express();
 
@@ -32,18 +26,11 @@ app.use(Express.json());
 app.use(Express.urlencoded({ extended: true }));
 app.use(morgan("dev"));
 
-let socketConnections = [];
-
 const logger = winston.createLogger({
   level: "info",
   format: winston.format.json(),
   defaultMeta: { service: "irc" },
   transports: [
-    //
-    // - Write all logs with importance level of `error` or less to `error.log`
-    // - Write all logs with importance level of `info` or less to `combined.log`
-    // new winston.transports.File({ filename: 'error.log', level: 'error' }),
-    // new winston.transports.File({ filename: 'combined.log' }),
     new winston.transports.Console(),
   ],
 });
@@ -60,7 +47,7 @@ const client = new Client();
 
 app.use("/static", Express.static("public"));
 
-app.get("/connect", (req, res) => {
+app.post("/connect", async (req, res) => {
   if (!client.connected) client.connect(UserSettings);
 
   var userInfo: IChannel = {
@@ -70,6 +57,7 @@ app.get("/connect", (req, res) => {
     created_at: new Date(),
     updated_at: new Date(),
     messages: [],
+    active: true
   };
 
   MongooseDal.createChannel(userInfo);
@@ -77,14 +65,6 @@ app.get("/connect", (req, res) => {
   client.on("socket close", (e) => {
     console.log(e);
     console.log("socket closed");
-  });
-
-  client.on("connected", () => {
-    client.join("channel");
-  });
-
-  client.on("registered", () => {
-    client.join("channel");
   });
 
   client.on(
@@ -121,60 +101,21 @@ app.get("/connect", (req, res) => {
     console.log(event);
   });
 
-  res.send(client.connected);
+  // Get Users State from the mongoDB
+  var usersChannels = await MongooseDal.getChannelsForUser(UserSettings.nick);
+  res.send( {nick: UserSettings.nick, state: usersChannels} );
+
 });
-
-app.get("/channel/joinall", (req, res) => {
-  var result = [];
-
-  UserSettings.channels.forEach((channel) => {
-    var channelObj = client.channel(
-      Utils.FormChannel(channel.name),
-      channel.key
-    );
-    channelObj.join();
-    channelObj.updateUsers();
-
-    channelObj.updateUsers(function () {
-      var users = channelObj.users;
-      console.log(users);
-      result.push({ channel: channel.name, status: "joined", users: users });
-
-      res.send(result);
-    });
-
-    // Or you could even stream the channel messages elsewhere
-    // var stream = channel.stream();
-    // stream.pipe(process.stdout);
-  });
-});
-
-// app.get('/channel/join/:channelName', async (req, res) => {
-//     // TODO: Do we always need o build out a buffer ?
-//     // get chanel from UserSettings
-//     // var channelInfo = UserSettings.channels.find(x => x.name == req.params.channelName);
-
-//     var channel = client.channel('#' + req.params.channelName);
-//     channel.join();
-
-//     channel.updateUsers(function() {
-//         var users = channel.users;
-//         socketConnections.forEach(socket => {
-//             socket.emit('channel:joined', { channel: req.params.channelName, users: users });
-//         });
-
-//         res.send('Joined channel : #' + req.params.channelName);
-//     });
-// });
 
 app.post("/channel/join", async (req, res) => {
   var channel = client.channel("#" + req.body.channel, req.body.key);
   channel.join();
 
   var channelMongo: IChannel = {
+    active: true,
     name: req.body.channel,
     description: "Test Channel",
-    owner: "yorha",
+    owner: UserSettings.nick,
     created_at: new Date(),
     updated_at: new Date(),
     messages: [],
@@ -187,13 +128,24 @@ app.post("/channel/join", async (req, res) => {
   channel.updateUsers(function () {
     var users = channel.users;
     socketConnections.forEach((socket) => {
-      socket.emit("channel:joined", {
+      socket.socket.emit("channel:joined", {
         channel: req.body.channel,
         users: users,
       });
     });
-    res.send("Joined channel : #" + req.body.channel);
+    res.send({users: users, channel: req.body.channel });
   });
+});
+
+// DEBUG AREA
+app.get('/debug', async (req, res) => {
+  const channels = await MongooseDal.getChannels();
+  res.send(channels);
+});
+
+app.get('/debug/channel/:ownerName', async (req, res) => {
+  const channels = await MongooseDal.getChannelsForUser(req.params.ownerName);
+  res.send(channels);
 });
 
 app.get("/channel/list", (req, res) => {
@@ -207,21 +159,26 @@ app.post("/message/send", (req, res) => {
   res.send("Message sent!");
 });
 
+app.post('/nick/set', (req, res) => { 
+  console.log(req.body);
+  client.changeNick(req.body.nick);
+
+  res.send({message: "Nick changed", nick: req.body.nick });
+});
+
+
 // Socket Hooks
 io.on("connection", (socket) => {
   console.log("a user connected : quasui Session ID: " + socket.id);
   // TODO: add by userID later
-  socketConnections.push(socket);
+  socketConnections.push({socketId: socket.id, socket: socket, user: ""});
   socket.on("client:message", async (message) => {
     var channel = "tadas_test";
     if (message.channel) channel = message.channel;
     client.say("#" + channel, message.message);
-    // client.say(channel, message.message);
-    // Shadow message to self.
-    client.say("tadas", message.message);
 
     const messageStore: IMessage = {
-      sender: "yorha", // TODO : get session user
+      sender: UserSettings.nick, // TODO : get session user
       message: message.message,
       created_at: new Date(),
     };
