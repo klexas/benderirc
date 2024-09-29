@@ -1,13 +1,16 @@
 import Express from "express";
 import Cors from "cors";
 import morgan from "morgan";
-import { Client } from "irc-framework";
+// import { Client } from "irc-framework";
 import UserSettings from "./config";
 import MongooseDal from "./services/mongo";
-import { IChannel, IMessage } from "./models/channel";
+import { IChannel } from "./models/channel";
 import { routes } from './router';
 import { createServer } from "http";
-import { Server } from "socket.io";
+import { SocketService } from "./services/socket";
+import { connect } from "./router/chanserv";
+import IrcService from "./services/ircService";
+import winston from "winston";
 
 MongooseDal.connect().then(
   () => {
@@ -17,24 +20,34 @@ MongooseDal.connect().then(
     console.log(err);
   }
 );
-let socketConnections = [];
+
+const logger = winston.createLogger({
+  level: "info",
+  format: winston.format.json(),
+  defaultMeta: { service: "irc" },
+  transports: [new winston.transports.Console()],
+});
 
 const app = Express();
+
 const httpServer = createServer(app);
+const socketService = new SocketService(httpServer);
+const client = new IrcService(logger, socketService);
+
+socketService.configureClient();
 
 app.use(Cors());
 app.use(Express.json());
 app.use(Express.urlencoded({ extended: true }));
 app.use(morgan("dev"));
 
-const client = new Client();
-
 app.use('/', routes);
+app.post("/connect", connect(client));
 
 app.use("/static", Express.static("public"));
 
 app.post("/channel/join", async (req, res) => {
-  var channel = client.channel("#" + req.body.channel, req.body.key);
+  var channel = client.getClient().channel("#" + req.body.channel, req.body.key);
   channel.join();
 
   var channelMongo: IChannel = {
@@ -47,20 +60,19 @@ app.post("/channel/join", async (req, res) => {
     messages: [],
   };
 
-  console.log(channelMongo);
-
   await MongooseDal.createChannel(channelMongo);
-
-  channel.updateUsers(function () {
-    var users = channel.users;
-    socketConnections.forEach((socket) => {
-      socket.socket.emit("channel:joined", {
-        channel: req.body.channel,
-        users: users,
-      });
+  const socketCons = socketService.getConnections();
+  console.log("Socket connections: " + socketCons.length);
+  var users = channel.users;
+  socketCons.forEach((socket) => {
+    console.log("Emitting to " + socket.socketId);
+    socket.socket.emit("channel:joined", {
+      channel: req.body.channel,
+      users: users,
     });
-    res.send({users: users, channel: req.body.channel });
   });
+
+  res.send({users: users, channel: req.body.channel });
 });
 
 // DEBUG AREA
@@ -75,50 +87,21 @@ app.get('/debug/channel/:ownerName', async (req, res) => {
 });
 
 app.get("/channel/list", (req, res) => {
-  res.send(client.channelList);
+  res.send(client.getClient().channelList);
 });
 
 app.post("/message/send", (req, res) => {
   console.log(req.body);
-  client.say("#" + req.body.channel, req.body.message);
-  client.say(req.body.channel, req.body.message);
+  client.getClient().say("#" + req.body.channel, req.body.message);
+  client.getClient().say(req.body.channel, req.body.message);
   res.send("Message sent!");
 });
 
 app.post('/nick/set', (req, res) => { 
   console.log(req.body);
-  client.changeNick(req.body.nick);
+  client.getClient().changeNick(req.body.nick);
 
   res.send({message: "Nick changed", nick: req.body.nick });
-});
-
-// Move this to some service. 
-const io = new Server(httpServer, {
-  cors: {
-    origin: "*",
-    methods: ["GET", "POST"],
-  },
-});
-
-io.on("connection", (socket) => {
-  console.log("a user connected : quasui Session ID: " + socket.id);
-  // TODO: add by userID later
-  socketConnections.push({socketId: socket.id, socket: socket, user: ""});
-  socket.on("client:message", async (message) => {
-    var channel = "tadas_test";
-    if (message.channel) channel = message.channel;
-    client.say("#" + channel, message.message);
-
-    const messageStore: IMessage = {
-      sender: UserSettings.nick, // TODO : get session user
-      message: message.message,
-      created_at: new Date(),
-    };
-
-    console.log(messageStore);
-
-    await MongooseDal.addMessage(message.channel, messageStore);
-  });
 });
 
 httpServer.listen(3000, () => {

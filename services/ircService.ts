@@ -1,19 +1,18 @@
-import { Server } from "socket.io";
-import { createServer } from "http";
-import { IMessage } from "../models/channel";
 import { Client } from "irc-framework";
 import UserSettings from "../config";
 import winston from "winston";
-import MongooseDal from "./mongo";
-import Utils from "./utils";
+import { SocketService } from "./socket";
 
-export default class IrcClient {
+export default class IrcService {
   private client: Client;
   private logger: winston.Logger;
+  private socketService: SocketService;
 
-  constructor(logger: winston.Logger) {
+  constructor(logger: winston.Logger, socketService: SocketService) {
     this.client = new Client();
+    this.socketService = socketService;
     this.logger = logger;
+    this.socketService.registerClient(this.client);
   }
 
   public connect() {
@@ -23,6 +22,10 @@ export default class IrcClient {
       } catch (err) {
         console.log(err);
       }
+  }
+
+  public getClient() {
+    return this.client;
   }
 
   public configureClient() {
@@ -40,30 +43,14 @@ export default class IrcClient {
           channel: event.target,
           message: event.message,
         });
-        // TODO: This can notify a socktService
-        // this.io.emit("chat:message", {
-        //   user: event.nick,
-        //   channel: event.target,
-        //   message: event.message,
-        // });
-
-        const messageStore: IMessage = {
-          sender: event.nick, // TODO : get session user
-          message: event.message,
-          created_at: new Date(),
-        };
-
-        console.log(messageStore);
-
-        await MongooseDal.addMessage(
-          Utils.CleanChannel(event.target),
-          messageStore
-        );
+        await this.socketService.sendMessageAsync(event.target, event.message, event.nick);
       }
     );
 
     this.client.on("error", (event) => {
       console.log(event);
     });
+
+    return this.client;
   }
 }

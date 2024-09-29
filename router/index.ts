@@ -5,6 +5,6 @@ import { chanservRouter } from './chanserv';
 
 export const routes = express.Router();
 
-routes.use("channel", channelRouter);
+//routes.use("channel", channelRouter);
 routes.use("/cs", chanservRouter);
 routes.use("/ns", nickservRouter);
