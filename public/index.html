@@ -4,11 +4,11 @@
 <head>
     <meta charset="UTF-8">
     <title>POC - Websocket from IRC</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
-        integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <link rel="stylesheet" href="./bootstrap.min.css">
     <script src="http://localhost:3000/socket.io/socket.io.js"></script>
     <!-- Jquery CDN -->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.0/dist/js/bootstrap.bundle.min.js"></script>
     <!-- Axios CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.1/axios.min.js"></script>
     <script src="main.js"></script>
@@ -21,39 +21,63 @@
 
 <body>
     <div class="container">
-        <button class="btn btn-primary" id="connect">Connect</button>
-        <hr />
-        
-        <h3>Nick settings</h3>
-        <input type="text" id="nick" placeholder="nick" value=""/>
-        <input type="text" id="realname" placeholder="realname" value=""/>
-        <input type="text" id="password" placeholder="password" value=""/>
-        <button class="btn btn-primary" id="set_nick">Set Nick</button>
-        <hr />
 
-        <input type="text" id="channel" placeholder="channel" value="tadas_test"/>
-        <input type="text" id="key" placeholder="key (optional)" />
-        <button class="btn btn-primary" id="join_channel">Join Channel</button>
-        
-        <div class="row">
-            <div class="col">
-                <h3>IRC</h3>
-                <ul class="list" id="messages"></ul>
-                <div class="fixed-bottom">
-                    <div class="input-group input-group-sm mb-12">
-                    <div class="input-group-prepend">
-                        <span class="input-group-text" id="prefix_nick">NICK</span>
-                        </div>
-                    <input type="text" id="message" class="col" /><button class="btn btn-primary" id="message_send">Send</button>
-                    </div>
-                    <div class="btn-group" role="group" aria-label="Channel list" id="channels">
-                        <button type="button" class="btn btn-secondary">ChanServ</button>
-                      </div>
+        <ul class="nav nav-tabs" id="myTab" role="tablist">
+            <li class="nav-item" role="presentation">
+              <button class="nav-link active" id="home-tab" data-bs-toggle="tab" data-bs-target="#home-tab-pane" type="button" role="tab" aria-controls="home-tab-pane" aria-selected="true">Server</button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="profile-tab" data-bs-toggle="tab" data-bs-target="#profile-tab-pane" type="button" role="tab" aria-controls="profile-tab-pane" aria-selected="false">Nick</button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="contact-tab" data-bs-toggle="tab" data-bs-target="#contact-tab-pane" type="button" role="tab" aria-controls="contact-tab-pane" aria-selected="false">Channel</button>
+            </li>
+          </ul>
+          <div class="tab-content" id="myTabContent">
+            <div class="tab-pane fade show active" id="home-tab-pane" role="tabpanel" aria-labelledby="home-tab" tabindex="0">
+                <button class="btn btn-primary" id="connect">Connect</button>
+            </div>
+            <div class="tab-pane fade" id="profile-tab-pane" role="tabpanel" aria-labelledby="profile-tab" tabindex="0">
+                <div class="input-group">
+                    <span class="input-group-text">Nick</span>
+                    <input type="text" aria-label="nick" placeholder="nick" class="form-control" value="">
+                    <input type="password" aria-label="password" placeholder="Password" class="form-control">
+                    <button class="btn btn-sm btn-primary" id="set_nick">Set Nick</button>
+                  </div>
+            </div>
+            <div class="tab-pane fade" id="contact-tab-pane" role="tabpanel" aria-labelledby="contact-tab" tabindex="0">
+                <div class="input-group">
+                    <span class="input-group-text">Channel</span>
+                    <input type="text" id="channel" class="form-control" placeholder="channel" value="tadas_test"/>
+                    <input type="text" id="key" class="form-control" placeholder="key (optional)" />
+                    <button class="btn btn-sm btn-primary" id="join_channel">Join</button>
                 </div>
             </div>
+          </div>
+
+        <div class="row">
             <div class="col">
+                <h3 id="channel_name"></h3>
+                <hr />
+                <div class="chat_area" id="chat_area">
+                    <ul class="list" id="messages"></ul>
+                    <div class="fixed-bottom">
+                        <div class="input-group input-group-sm mb-12">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text" id="prefix_nick">NICK</span>
+                            </div>
+                        <input type="text" id="message" class="form-control" /><button class="btn btn-sm btn-primary" id="message_send">Send</button>
+                        </div>
+                        <div class="btn-group" role="group" aria-label="Channel list" id="channels">
+                            <button type="button" class="btn btn-secondary">ChanServ</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
                 <h3>Online Users</h3>
-                <ul class="list" id="users"></ul>
+                <hr />
+                <ul class="list-group user_li_group" id="users"></ul>
             </div>
         </div>
 </body>

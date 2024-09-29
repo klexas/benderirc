@@ -1,6 +1,7 @@
 // Mongoose controller
 import mongoose from "mongoose";
 import { Channel, IChannel, IMessage } from "../models/channel";
+import { MessageQueue, IMessageQueue } from "../models/messageQueue";
 
 // MONGODB MONGOOS DAL CLASS
 const MongooseDal = {
@@ -32,6 +33,9 @@ const MongooseDal = {
     },
     getChannelsForUser: async (username: string) => {
        return await Channel.find({ owner: username, active: true }, { messages: 1, name: 1, updated_at: 1 });
+    },
+    addMessageToQueue: async (message: IMessageQueue) => {
+        return await MessageQueue.create(message);
     }
 };
 
