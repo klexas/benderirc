@@ -8,8 +8,13 @@ export const chanservRouter = Router();
 
 export function connect(ircClient: IrcService) : RequestHandler {
   return async function(req: Request, res: any) {	
-		ircClient.connect();
+    if(ircClient.getClient().connected){
+      var usersChannels = await MongooseDal.getChannelsForUser(UserSettings.nick);
+      res.send( {nick: UserSettings.nick, state: usersChannels} );
+      return;
+    }
 
+		ircClient.connect();
     // TODO: Move this to a service
     var userInfo: IChannel = {
       name: UserSettings.nick,
@@ -25,7 +30,6 @@ export function connect(ircClient: IrcService) : RequestHandler {
     ircClient.configureClient();
 
     var usersChannels = await MongooseDal.getChannelsForUser(UserSettings.nick);
-    
     res.send( {nick: UserSettings.nick, state: usersChannels} );
 	}
 }

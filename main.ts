@@ -32,7 +32,8 @@ const app = Express();
 
 const httpServer = createServer(app);
 const socketService = new SocketService(httpServer);
-const client = new IrcService(logger, socketService);
+const clientService = new IrcService(logger, socketService);
+const client = clientService.getClient();
 
 socketService.configureClient();
 
@@ -42,13 +43,15 @@ app.use(Express.urlencoded({ extended: true }));
 app.use(morgan("dev"));
 
 app.use('/', routes);
-app.post("/connect", connect(client));
+app.post("/connect", connect(clientService));
 
 app.use("/static", Express.static("public"));
 
 app.post("/channel/join", async (req, res) => {
-  var channel = client.getClient().channel("#" + req.body.channel, req.body.key);
-  channel.join();
+  const socketConnections = socketService.getConnections();
+  const channel = client.channel("#" + req.body.channel, req.body.key);
+
+  channel.join("#" + req.body.channel, req.body.key);
 
   var channelMongo: IChannel = {
     active: true,
@@ -61,18 +64,17 @@ app.post("/channel/join", async (req, res) => {
   };
 
   await MongooseDal.createChannel(channelMongo);
-  const socketCons = socketService.getConnections();
-  console.log("Socket connections: " + socketCons.length);
-  var users = channel.users;
-  socketCons.forEach((socket) => {
-    console.log("Emitting to " + socket.socketId);
-    socket.socket.emit("channel:joined", {
-      channel: req.body.channel,
-      users: users,
-    });
-  });
 
-  res.send({users: users, channel: req.body.channel });
+  channel.updateUsers(() => {
+    var users = channel.users;
+    socketConnections.forEach((socket) => {
+      socket.socket.emit("channel:joined", {
+        channel: req.body.channel,
+        users: users,
+      });
+    });
+    res.send({users: users, channel: req.body.channel });
+  });
 });
 
 // DEBUG AREA
@@ -87,20 +89,19 @@ app.get('/debug/channel/:ownerName', async (req, res) => {
 });
 
 app.get("/channel/list", (req, res) => {
-  res.send(client.getClient().channelList);
+  res.send(client.channelList);
 });
 
 app.post("/message/send", (req, res) => {
   console.log(req.body);
-  client.getClient().say("#" + req.body.channel, req.body.message);
-  client.getClient().say(req.body.channel, req.body.message);
+  client.say("#" + req.body.channel, req.body.message);
+  client.say(req.body.channel, req.body.message);
   res.send("Message sent!");
 });
 
 app.post('/nick/set', (req, res) => { 
   console.log(req.body);
-  client.getClient().changeNick(req.body.nick);
-
+  client.changeNick(req.body.nick);
   res.send({message: "Nick changed", nick: req.body.nick });
 });
 

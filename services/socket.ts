@@ -61,7 +61,7 @@ export class SocketService {
       });
 
       const messageStore: IMessage = {
-        sender: nick, // TODO : get session user
+        sender: nick,
         message: message,
         created_at: new Date(),
       };
