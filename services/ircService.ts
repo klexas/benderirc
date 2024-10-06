@@ -1,17 +1,15 @@
 import { Client } from "irc-framework";
 import UserSettings from "../config";
-import winston from "winston";
 import { SocketService } from "./socket";
+import logger from "mercedlogger";
 
 export default class IrcService {
   private client: Client;
-  private logger: winston.Logger;
   private socketService: SocketService;
 
-  constructor(logger: winston.Logger, socketService: SocketService) {
+  constructor(socketService: SocketService) {
     this.client = new Client();
     this.socketService = socketService;
-    this.logger = logger;
     this.socketService.registerClient(this.client);
   }
 
@@ -38,7 +36,7 @@ export default class IrcService {
       "message",
       async (event: { nick: any; target: string; message: any }) => {
         // TODO: This is for the POC - this should have a DTO and also is XSS vulnerable.
-        this.logger.info({
+        logger.log.magenta({
           user: event.nick,
           channel: event.target,
           message: event.message,
