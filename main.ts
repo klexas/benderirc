@@ -1,7 +1,6 @@
 import Express from "express";
 import Cors from "cors";
 import morgan from "morgan";
-// import { Client } from "irc-framework";
 import UserSettings from "./config";
 import MongooseDal from "./services/mongo";
 import { IChannel } from "./models/channel";
@@ -10,7 +9,6 @@ import { createServer } from "http";
 import { SocketService } from "./services/socket";
 import { connect } from "./router/chanserv";
 import IrcService from "./services/ircService";
-import winston from "winston";
 
 MongooseDal.connect().then(
   () => {
@@ -21,18 +19,11 @@ MongooseDal.connect().then(
   }
 );
 
-const logger = winston.createLogger({
-  level: "info",
-  format: winston.format.json(),
-  defaultMeta: { service: "irc" },
-  transports: [new winston.transports.Console()],
-});
-
 const app = Express();
 
 const httpServer = createServer(app);
 const socketService = new SocketService(httpServer);
-const clientService = new IrcService(logger, socketService);
+const clientService = new IrcService(socketService);
 const client = clientService.getClient();
 
 socketService.configureClient();
