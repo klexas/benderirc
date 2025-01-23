@@ -1,4 +1,4 @@
-import { Router, Request, Response } from 'express';
+import { Express, Router, Request, Response } from 'express';
 import { ParsedQs } from 'qs';
 import { isLoggedIn } from '../../middleware/auth';
 import userService from '../../services/userService';
@@ -14,6 +14,9 @@ router.get('/', (req: Request<{}, any, any, ParsedQs, Record<string, any>>, res:
 router.get('/:id', isLoggedIn, (req: Request<{}, any, any, ParsedQs, Record<string, any>>, res: Response) => {
     res.send("You are logged in. ");
 });
+
+// serve a static site to only a logged in user.
+router.use("/static", isLoggedIn, Express.static("private"));
 
 router.post('/login', (req: Request<{}, any, any, ParsedQs, Record<string, any>>, res: Response) => {
     userService.Login(req.body, (err, data) => {

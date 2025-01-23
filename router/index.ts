@@ -10,3 +10,4 @@ export const routes = express.Router();
 routes.use("/cs", chanservRouter);
 routes.use("/ns", nickservRouter);
 routes.use('/user', userRouter);
+routes.use('/private', privateRouter)
