@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.1/axios.min.js"></script>
+</head>
+
+<body class="bg-gray-800 text-white font-sans">
+    <div class="container mx-auto my-12 p-8 border border-gray-600 rounded-lg max-w-lg bg-gray-900">
+        <div id="login-error-msg"
+            class="bg-red-600 text-white text-sm py-2 px-4 rounded-lg max-w-xs mb-4 float-right hidden">Invalid username or password</div>
+        <h1 class="text-xl mb-8">Login</h1>
+        <div class="mb-6">
+            <label for="username" class="block mb-2 text-sm font-medium">Username</label>
+            <input type="text" id="username" name="username" placeholder=""
+                class="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" />
+        </div>
+        <div class="mb-6">
+            <label for="password" class="block mb-2 text-sm font-medium">Password</label>
+            <input type="password" id="password" name="password" placeholder=""
+                class="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" />
+        </div>
+        <div class="flex justify-between items-center mb-6">
+            <a href="#" class="text-blue-500 hover:underline text-sm">Forgot password?</a>
+            <button class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg"
+                id="login-form-submit">Login</button>
+        </div>
+    </div>
+</body>
+
+<script>
+    var loginButton = document.getElementById('login-form-submit');
+    var loginErrorMsg = document.getElementById('login-error-msg');
+
+    loginButton.addEventListener('click', (e) => {
+        e.preventDefault();
+        var username = document.getElementById('username').value;
+        var password = document.getElementById('password').value;
+
+        // POST with axios to /login
+        axios.post('/user/login', {
+            username: username,
+            password: password
+        }).then((response) => {
+            loginErrorMsg.classList.add('hidden');
+            localStorage.setItem('token', response.data.token);
+            // go to /static
+            window.location.href = '/static';
+            console.log(response);
+        }).catch((error) => {
+            loginErrorMsg.classList.remove('hidden');
+            console.log(error);
+        });
+    }
+    );
+
+</script>
+
+</html>

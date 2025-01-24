@@ -1,5 +1,90 @@
+var token = localStorage.getItem('token');
+if (!token) {
+  window.location.href = '/login';
+}
+
 var selectedChannel = "tadas_test";
-var socket = io('http://localhost:3000');
+var socket = io('http://127.0.0.1:3000');
+var currentNick = '';
+var channels = [];
+
+$(document).ready(function () {
+    $("#message").keypress(function (e) {
+        if (e.which == 13) {
+            var message = $('#message').val();
+            $('#message').val('');
+            $('#messages').append('<li>' + selectedChannel + ' : You : ' + message + ' </li>');
+            // Socket sent
+            socket.emit('client:message', {
+                message: message,
+                channel: selectedChannel
+            });     
+            $('#chat_area').animate({ scrollTop: $('#chat_area').prop("scrollHeight")}, 1000);
+
+          return false;  
+        }
+      });
+    $('#message_send').click(function () {
+        var message = $('#message').val();
+        $('#message').val('');
+        $('#messages').append('<li>' + selectedChannel + ' : You : ' + message + ' </li>');
+        // Socket sent
+        socket.emit('client:message', {
+            message: message,
+            channel: selectedChannel
+        });     
+        $('#messages').animate({ scrollTop: $('#messages').prop("scrollHeight")}, 1000);
+    });
+
+    $('#connect').click(()=>{
+        $('#channel_name').text('ChaneServe');
+        var authToken = localStorage.getItem('token');
+        axios.defaults.headers['Authorization'] = 'Bearer ' + authToken; 
+               
+        axios.post('http://127.0.0.1:3000/connect').then((response)=>{
+            channels = response.data.state;
+            console.log(response);
+
+            $('#prefix_nick').text(response.data.nick);
+            $('#channels').empty();
+            $.each(channels, function (index, channel) {
+                $('#channels').append('<button type="button" onclick="openChannel(\'' + channel.name + '\')" class="btn btn-secondary">' + channel.name + '</button>');
+            });
+        }).catch((error)=>{
+            console.log(error);
+            if (error.response.status == 401) {
+                window.location.href = '/login';
+            }
+        });
+    });
+
+    $('#set_nick').click(()=>{
+        var nick = $('#nick').val();
+        var realname = $('#realname').val();
+        var password = $('#password').val();
+        $('#nick').val('');
+        $('#realname').val('');
+        $('#password').val('');
+        axios.post('http://127.0.0.1:3000/nick/set', {
+            nick: nick,
+            realname: realname,
+            password: password
+            }).then((response)=>{
+                $('#prefix_nick').text(response.data.nick);
+            }).catch((error)=>{
+                console.log(error);
+        });
+    });
+
+    $('#join_channel').click(()=>{
+        var channel = $('#channel').val();
+        var key = $('#key').val();
+        $('#channel').val('');
+        $('#key').val('');  
+        joinChannel(channel, key);
+    });
+});
+
 socket.on('chat:message', function (data) {
     console.log(data);
     // selectedChannel = data.channel;
@@ -7,7 +92,6 @@ socket.on('chat:message', function (data) {
     $('#chat_area').animate({ scrollTop: $('#chat_area').prop("scrollHeight")}, 1000);
 });
 
-var channels = [];
 
 socket.on('channel:list', function (data) {
     console.log(data);
@@ -39,8 +123,7 @@ function openChannel(channel) {
 };
 
 function joinChannel(channel, key) {
-    // Make http request to http://localhost:3000/channel/join
-    axios.post('http://localhost:3000/channel/join', {
+    axios.post('http://127.0.0.1:3000/channel/join', {
         channel: channel,
         key: key
     }).then((response) => {
@@ -61,74 +144,3 @@ function joinChannel(channel, key) {
     });
 };
 
-$(document).ready(function () {
-    $("#message").keypress(function (e) {
-        if (e.which == 13) {
-            var message = $('#message').val();
-            $('#message').val('');
-            $('#messages').append('<li>' + selectedChannel + ' : You : ' + message + ' </li>');
-            // Socket sent
-            socket.emit('client:message', {
-                message: message,
-                channel: selectedChannel
-            });     
-            $('#chat_area').animate({ scrollTop: $('#chat_area').prop("scrollHeight")}, 1000);
-
-          return false;    //<---- Add this line
-        }
-      });
-    $('#message_send').click(function () {
-        var message = $('#message').val();
-        $('#message').val('');
-        $('#messages').append('<li>' + selectedChannel + ' : You : ' + message + ' </li>');
-        // Socket sent
-        socket.emit('client:message', {
-            message: message,
-            channel: selectedChannel
-        });     
-        $('#messages').animate({ scrollTop: $('#messages').prop("scrollHeight")}, 1000);
-    });
-
-    $('#connect').click(()=>{
-        $('#channel_name').text('ChaneServe');
-        // Make http request to http://localhost:3000/connect
-        axios.post('http://localhost:3000/connect').then((response)=>{
-            channels = response.data.state;
-            console.log(response);
-
-            $('#prefix_nick').text(response.data.nick);
-            $('#channels').empty();
-            $.each(channels, function (index, channel) {
-                $('#channels').append('<button type="button" onclick="openChannel(\'' + channel.name + '\')" class="btn btn-secondary">' + channel.name + '</button>');
-            });
-        }).catch((error)=>{
-            console.log(error);
-        });
-    });
-
-    $('#set_nick').click(()=>{
-        var nick = $('#nick').val();
-        var realname = $('#realname').val();
-        var password = $('#password').val();
-        $('#nick').val('');
-        $('#realname').val('');
-        $('#password').val('');
-        axios.post('http://localhost:3000/nick/set', {
-            nick: nick,
-            realname: realname,
-            password: password
-            }).then((response)=>{
-                $('#prefix_nick').text(response.data.nick);
-            }).catch((error)=>{
-                console.log(error);
-        });
-    });
-
-    $('#join_channel').click(()=>{
-        var channel = $('#channel').val();
-        var key = $('#key').val();
-        $('#channel').val('');
-        $('#key').val('');  
-        joinChannel(channel, key);
-    });
-});

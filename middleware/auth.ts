@@ -13,24 +13,24 @@ const isLoggedIn = async (req, res, next) => {
     logger.log.magenta("Auth Header", req.headers);
 
     if (!req.headers.authorization){
-        res.status(400).json({ error: "No authorization header" });
+        res.status(401).json({ error: "No authorization header" });
         return;
     }
 
     const token = req.headers.authorization.split(" ")[1];
     if (!token) 
         {
-            res.status(400).json({ error: "malformed auth header" });
+            res.status(401).json({ error: "malformed auth header" });
             return;
         }
 
     const payload = await jwt.verify(token, SECRET_KEY);
-    if (!payload) res.status(400).json({ error: "token verification failed" });
+    if (!payload) res.status(401).json({ error: "token verification failed" });
     // request store for the downstream
     req.user = payload;
     next();
   } catch (error) {
-    res.status(400).json({ error: "malformed auth header" });
+    res.status(401).json({ error: "malformed auth header" });
   }
 };
 
@@ -43,16 +43,16 @@ const isAdmin = async (req, res, next) => {
         next();
       }
       else {
-        res.status(400).json({ error: "You are not an admin" });
+        res.status(401).json({ error: "You are not an admin" });
       }  
   } catch (error) {
-    res.status(400).json({ error: "You are not an admin" });
+    res.status(401).json({ error: "You are not an admin" });
   }
 }
 
 const getUser = async (req, res) => {
   const token = req.headers.authorization.split(" ")[1];
-    if (!token) res.status(400).json({ error: "malformed auth header" });
+    if (!token) res.status(401).json({ error: "malformed auth header" });
 
     const payload = await jwt.verify(token, SECRET_KEY);
     logger.log.magenta("Payload", payload);
