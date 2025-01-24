@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>IRC</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+        <link rel="stylesheet" href="style.css">
+    </head>
+
+    <body class="bg-gray-800 text-white font-sans">
+        <!-- Main chatroom area with all MEssages of channel -->
+        <div class="container mx-auto my-12 p-8 border border-gray-600 rounded-lg max-w-lg bg-gray-900 hidden" id="connect">
+            <h1 class="text-xl mb-8">IRC</h1>
+            <div class="mb-6">
+                <div class="flex justify-between items-center mb-6">
+                    <a href="#" class="text-blue-500 hover:underline text-sm">Channel</a>
+                    <button class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg">Join</button>
+                </div>
+                <div class="mb-6">
+                    <label for="channels" class="block mb-2 text-sm font-medium">Channels to join – comma or line separated, password after a space</label>
+                    <input type="text" id="channels" name="channels" placeholder="e.g. #chat, #feedback, #secretchat password1" class="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" />
+                </div>
+            </div>
+            <div class="mb-6">
+                <div class="flex justify-between items-center mb-6">
+                    <a href="#" class="text-blue-500 hover:underline text-sm">Advanced options</a>
+                    <button class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg">Join network</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Top bar with connected channels -->
+        <div class="fixed top-0 left-0 right-0 bg-gray-900 border-b border-gray-600 p-4 flex justify-between items-center">
+            <div class="flex space-x-4">
+                <a href="#" class="text-blue-500 hover:underline text-sm px-4 py-2 border-b-2 border-transparent hover:border-blue-500">#general</a>
+                <a href="#" class="text-blue-500 hover:underline text-sm px-4 py-2 border-b-2 border-transparent hover:border-blue-500">#random</a>
+                <a href="#" class="text-blue-500 hover:underline text-sm px-4 py-2 border-b-2 border-transparent hover:border-blue-500">#help</a>
+                <!-- Add more channels here -->
+            </div>
+            <button class="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg">Disconnect</button>
+        </div>
+
+        <!-- Chat Area -->
+        <div class="container mx-auto my-20 mb-20 p-8 border border-gray-600 rounded-lg max-w-4xl bg-gray-900 overflow-y-auto h-full">
+            <div class="flex items-start space-x-4">
+                <div>
+                    <div class="flex items-center space-x-2">
+                        <div class="text-sm font-medium">User1</div>
+                        <div class="text-xs text-gray-400">10:30 AM</div>
+                    </div>
+                    <div class="mt-1 text-sm">Hello, how are you?</div>
+                </div>
+            </div>
+            <div class="flex items-start space-x-4 mt-4">
+                <div>
+                    <div class="flex items-center space-x-2">
+                        <div class="text-sm font-medium">User2</div>
+                        <div class="text-xs text-gray-400">10:32 AM</div>
+                    </div>
+                    <div class="mt-1 text-sm">I'm good, thanks! How about you?</div>
+                </div>
+            </div>
+            <div class="flex items-start space-x-4 mt-4">
+                <div>
+                    <div class="flex items-center space-x-2">
+                        <div class="text-sm font-medium">User3</div>
+                        <div class="text-xs text-gray-400">10:35 AM</div>
+                    </div>
+                    <div class="mt-1 text-sm">Me too.. </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- User List Area -->
+        <div class="fixed right-0 top-0 h-full w-64 bg-gray-900 border-l border-gray-600 p-4 overflow-y-auto slide-in" id="userList">
+            <h2 class="text-xl mb-4">Users</h2>
+            <ul class="space-y-4">
+                <li class="flex items-center space-x-4">
+                    <i class="fas fa-user"></i>
+                    <span class="text-sm font-medium">User1</span>
+                </li>
+                <li class="flex items-center space-x-4">
+                    <i class="fas fa-user"></i>
+                    <span class="text-sm font-medium">User2</span>
+                </li>
+
+            </ul>
+        </div>
+        <button class="fixed bottom-20 right-4 bg-gray-800 text-white p-2 rounded" id="toggleButton">
+            <i class="fas fa-users"></i>
+        </button>    
+
+        <!-- Text input fixed bottom full width with send button -->
+        <div class="fixed bottom-0 w-full bg-gray-900 border-t border-gray-600 p-4">
+            <div class="flex items-center">
+                <div class="text-white font-medium mr-4">Tadas</div>
+                <input type="text" id="message" class="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" />
+                <button class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg ml-2">Send</button>
+            </div>
+        </div>
+        </body>
+
+        <script>
+           document.getElementById('toggleButton').addEventListener('click', function() {
+            const userList = document.getElementById('userList');
+            if (userList.classList.contains('slide-in')) {
+                userList.classList.remove('slide-in');
+                userList.classList.add('slide-out');
+            } else {
+                userList.classList.remove('slide-out');
+                userList.classList.add('slide-in');
+            }
+        });
+        </script>
+
+</html>

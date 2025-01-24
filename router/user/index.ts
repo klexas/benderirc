@@ -37,6 +37,7 @@ router.post('/register', (req: Request<{}, any, any, ParsedQs, Record<string, an
 
 router.delete('/:id', isAdmin, (req, res) => {
     // Handle DELETE request to delete a specific user
+    res.send("nah uh uh, you didn't say the magic word");
 });
 
 export const userRouter = router;

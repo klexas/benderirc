@@ -10,6 +10,7 @@ export function connect(ircClient: IrcService) : RequestHandler {
   return async function(req: Request, res: any) {	
     if(ircClient.getClient().connected){
       var usersChannels = await MongooseDal.getChannelsForUser(UserSettings.nick);
+      console.log("Users channels: ", usersChannels);
       res.send( {nick: UserSettings.nick, state: usersChannels} );
       return;
     }

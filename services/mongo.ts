@@ -32,7 +32,12 @@ const MongooseDal = {
         return Channel.updateOne( { name: channelName }, { $push: { messages: message }, updated_at: new Date() });
     },
     getChannelsForUser: async (username: string) => {
-       return await Channel.find({ owner: username, active: true }, { messages: 1, name: 1, updated_at: 1 });
+       return await Channel.find({ owner: username, active: true }, { name: 1, updated_at: 1 });
+    },
+    getMessagesForChannel: async (channelName: string) => {
+        var messages =  await Channel.findOne({ name: channelName }, { messages: 1 });
+        console.log(messages);
+        return messages;
     },
     addMessageToQueue: async (message: IMessageQueue) => {
         return await MessageQueue.create(message);

@@ -40,7 +40,11 @@ $(document).ready(function () {
         $('#channel_name').text('ChaneServe');
         var authToken = localStorage.getItem('token');
         axios.defaults.headers['Authorization'] = 'Bearer ' + authToken; 
-               
+        axios.headers = {   
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + authToken
+        };
+
         axios.post('http://127.0.0.1:3000/connect').then((response)=>{
             channels = response.data.state;
             console.log(response);
@@ -102,6 +106,7 @@ socket.on('channel:list', function (data) {
     });
 });
 socket.on('channel:joined', function (data) {
+    $('#messages').empty();
     console.log(data);
     selectedChannel = data.channel;
     $('#users').empty();
@@ -113,7 +118,10 @@ socket.on('channel:joined', function (data) {
         channels.push(data.channel);
         $('#channels').append('<button type="button" onclick="openChannel(\'' + data.channel + '\')" class="btn btn-secondary">' + data.channel + '</button>');
     }
-    // $('#channels').push('<button type="button" onclick="openChannel("' + data.channel + '")" class="btn btn-secondary">' + data.channel + '</button>');
+
+    for (let i = 0; i < data.messages.length; i++) {
+            $('#messages').append('<li>' + data.messages[i].sender + ' : ' + data.messages[i].message + ' </li>');
+        }
 });
 
 function openChannel(channel) {
@@ -127,20 +135,9 @@ function joinChannel(channel, key) {
         channel: channel,
         key: key
     }).then((response) => {
-        // Clear chat
-        $('#messages').empty();
         $('#channel_name').text(channel);
-        // populate from global channels.message var where channel.name == channel
-        channels.forEach((channel) => {
-            if (channel.name == selectedChannel) {
-                channel.messages.forEach((message) => {
-                    $('#messages').append('<li>' + selectedChannel + ' : ' + message.sender + ' : ' + message.message + ' </li>');
-                });
-            }
-        });
         $('#chat_area').animate({ scrollTop: $('#chat_area').prop("scrollHeight")}, 1000);
     }).catch((error) => {
         console.log(error);
     });
 };
-
