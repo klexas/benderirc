@@ -36,7 +36,6 @@ const MongooseDal = {
     },
     getMessagesForChannel: async (channelName: string) => {
         var messages =  await Channel.findOne({ name: channelName }, { messages: 1 });
-        console.log(messages);
         return messages;
     },
     addMessageToQueue: async (message: IMessageQueue) => {
