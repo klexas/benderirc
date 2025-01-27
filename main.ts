@@ -41,13 +41,13 @@ app.post("/connect", isLoggedIn, connect(clientService));
 app.use("/static", Express.static("public"));
 app.use("/login", Express.static("public/login/login.html"));
 
-app.post("/channel/join", async (req, res) => {
+app.post("/channel/join", isLoggedIn, async (req, res) => {
   const socketConnections = socketService.getConnections();
   const channel = client.channel("#" + req.body.channel, req.body.key);
 
   channel.join("#" + req.body.channel, req.body.key);
 
-  var channelMongo: IChannel = {
+  let channelMongo: IChannel = {
     active: true,
     name: req.body.channel,
     description: "Test Channel",
