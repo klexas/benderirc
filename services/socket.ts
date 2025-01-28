@@ -33,7 +33,7 @@ export class SocketService {
         user: "",
       });
       socket.on("client:message", async (message) => {
-        var channel = "tadas_test";
+        var channel = "Global";
         if (message.channel) channel = message.channel;
 
         // TODO: Need to find a better way to update the ircClient
@@ -45,13 +45,10 @@ export class SocketService {
           message: message.message,
           created_at: new Date(),
         };
-
-        console.log(messageStore);
-
         await MongooseDal.addMessage(message.channel, messageStore);
       });
       socket.on("direct:message", async (message) => {  
-        this.sendDirectMessageAsync(message.socketId, message.message, message.nick);
+        this.sendDirectMessageAsync(message.message, message.nick);
       });
       
     });
@@ -64,6 +61,14 @@ export class SocketService {
         channel: channel,
         message: message,
       });
+
+      const messageStore: IMessage = {
+        sender: nick,
+        message: message,
+        created_at: new Date(),
+      };
+
+      await MongooseDal.addMessage(Utils.CleanChannel(channel),messageStore);
   }
 
   async sendDirectMessageAsync(message: string, nick: string) {
@@ -74,6 +79,5 @@ export class SocketService {
       from: nick,
       message: message
     });
-    // this.ircClient.say(nick, message);
   }
 }
