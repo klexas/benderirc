@@ -50,24 +50,30 @@ export class SocketService {
 
         await MongooseDal.addMessage(message.channel, messageStore);
       });
+      socket.on("direct:message", async (message) => {  
+        this.sendDirectMessageAsync(message.socketId, message.message, message.nick);
+      });
+      
     });
     return this.io;
   }
+  
   async sendMessageAsync(channel: string, message: string, nick: string) {
     this.io.emit("chat:message", {
         user: nick,
         channel: channel,
         message: message,
       });
+  }
 
-      const messageStore: IMessage = {
-        sender: nick,
-        message: message,
-        created_at: new Date(),
-      };
+  async sendDirectMessageAsync(message: string, nick: string) {
+    console.log("sending direct message to " + nick);
+    console.log(message);
 
-      console.log(messageStore);
-
-      await MongooseDal.addMessage(Utils.CleanChannel(channel),messageStore);
+    this.io.emit("chat:direct", {
+      from: nick,
+      message: message
+    });
+    // this.ircClient.say(nick, message);
   }
 }

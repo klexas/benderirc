@@ -41,7 +41,11 @@ export default class IrcService {
           channel: event.target,
           message: event.message,
         });
-        await this.socketService.sendMessageAsync(event.target, event.message, event.nick);
+
+        if(event.target[0] === "#" || event.target == "AUTH") // Channel message
+          await this.socketService.sendMessageAsync(event.target, event.message, event.nick);
+        else // Direct message
+          await this.socketService.sendDirectMessageAsync(event.message, event.nick);
       }
     );
 

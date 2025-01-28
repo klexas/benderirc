@@ -13,6 +13,7 @@ var selectedChannel = "ChanServe";
 var socket = io('http://127.0.0.1:3000');
 var currentNick = '';
 var channels = [];
+var dmUsers = [{user: 'ChanServe', messages: []}];
 
 $(document).ready(function () {
     $("#message").keypress(function (e) {
@@ -112,6 +113,10 @@ socket.on("chat:message", function (data) {
     else notifyChannel(cleanChannel);
 });
 
+socket.on("chat:direct", function (data) {
+    console.log(data);
+    addDirectMessage(data);
+});
 
 socket.on('channel:list', function (data) {
     console.log(data);
@@ -121,6 +126,18 @@ socket.on('channel:list', function (data) {
         $('#channels').append('<button type="button" onclick="openChannel("' + channel + '")" class="btn btn-secondary">' + channel + '</button>');
     });
 });
+
+socket.on('channel:parted', function (data) {
+    $('#users').empty();
+    $('#messages').empty();
+    $.each(data.users, function (index, user) {
+        $('#users').append('<li class="flex items-center space-x-4"><i class="fas fa-user"></i><span class="text-sm font-medium">' + user.nick + ' [' + user.modes + ']</span></li>');
+    });
+    $('#channel_name').text('ChanServe');
+    selectedChannel = 'ChanServe';
+    $('#messages').animate({ scrollTop: $('#messages').prop("scrollHeight")}, 10);
+});
+
 socket.on('channel:joined', function (data) {
     data.channel[0] == '#' ? selectedChannel = data.channel.substring(1) : selectedChannel = data.channel;
     $('#users').empty();
@@ -142,6 +159,31 @@ socket.on('channel:joined', function (data) {
     }
 });
 
+function addDirectMessage(user) {
+    addMessage({
+        user: user.from,
+        message: user.message
+    });
+
+    // using the user.from as the key on the dmUsers array, add the message to the user
+    var userIndex = dmUsers.findIndex(u => u && u.user == user.from);
+
+    if (userIndex > -1) {
+        dmUsers[userIndex].messages.push(user.message);
+    } else {
+        dmUsers.push({
+            user: user.from,
+            messages: [user.message]
+        });
+    }
+
+    // add the user to the dm list
+    $('#dms').empty();
+    $.each(dmUsers, function (index, user) {
+        $('#dms').append('<button type="button" onclick="openDirectMessage(\'' + user.user + '\')" class="btn btn-secondary">' + user.user + '</button>');
+    });
+}
+
 function addMessage(message) {
     $('#messages').append('<div class="flex items-start space-x-4 mt-4"><div><div class="flex items-center space-x-2"><div class="text-sm font-medium">'+ message.user +'</div><div class="text-xs text-gray-400">10:30 AM</div></div><div class="mt-1 text-sm">' + message.message + '</div></div></div>');
     $('#messages').animate({ scrollTop: $('#messages').prop("scrollHeight")}, 10);
@@ -155,9 +197,7 @@ function toggleLoggedIn() {
 function notifyChannel(channel) {
     var notifyChannel = channel;
     channel[0] == '#' ? notifyChannel = channel.substring(1) : notifyChannel = channel;
-    // add red color to #channel and a ! icon 
     $('#channel_'+notifyChannel).addClass('bg-red-700');
-    // limit ! mark to only 1 
     if ($("#channel_" + notifyChannel).find("i").length <= 1) {
       $("#channel_" + notifyChannel).append('<i class="fas fa-exclamation"></i>');
       $("#channel_" + notifyChannel).addClass("animate-shake");
@@ -167,10 +207,10 @@ function notifyChannel(channel) {
     }
 }
 
-function openChannel(channel) {
+function openChannel(channel, key, isDm) {
     selectedChannel = channel;
     cleanChannelCss(channel);
-    joinChannel(channel);
+    joinChannel(channel, key, isDm);
 };
 
 function cleanChannelCss(channel){
@@ -181,7 +221,7 @@ function cleanChannelCss(channel){
     $('#channel_'+cleanChannel).removeClass('animate-shake');
 };
 
-function joinChannel(channel, key) {
+function joinChannel(channel, key, isDm) {
     axios.post('http://127.0.0.1:3000/channel/join', {
         channel: channel,
         key: key
