@@ -15,35 +15,44 @@ var currentNick = '';
 var channels = [];
 var dmUsers = [{user: 'ChanServe', messages: []}];
 
-$(document).ready(function () {
-    $("#message").keypress(function (e) {
-        if (e.which == 13) {
-            var message = $('#message').val();
-            $('#message').val('');
-            addMessage({
-                user: currentNick,
-                message: message
-            });
-            // Socket sent
-            socket.emit('client:message', {
-                message: message,
-                channel: selectedChannel
-            });     
-          return false;  
-        }
-      });
-    $('#message_send').click(function () {
-        var message = $('#message').val();
-        $('#message').val('');
-        // Socket sent
-        socket.emit('client:message', {
-            message: message,
-            channel: selectedChannel
-        });     
+function sendMessage() {
+    var message = $('#message').val();
+
+    if(channels.find(channel => channel.name == selectedChannel) == undefined){
+        const receiver = selectedChannel;
+        const message = $('#message').val();
         addMessage({
             user: currentNick,
             message: message
         });
+
+        socket.emit('client:direct', {
+            from: currentNick,
+            to: receiver,
+            message: message
+        });
+    } else {
+        addMessage({
+            user: currentNick,
+            message: message
+        });
+        socket.emit('client:message', {
+            message: message,
+            channel: selectedChannel
+        });     
+    }
+
+    $('#messages').animate({ scrollTop: $('#messages').prop("scrollHeight")}, 10);
+    $('#message').val('');
+    return false;  
+}
+
+$(document).ready(function () {
+    $("#message").keypress(function (e) {
+        if (e.which == 13) sendMessage();
+      });
+    $('#message_send').click(function () {
+        sendMessage();
     });
 
     $('#connect').click(()=>{
@@ -91,11 +100,13 @@ $(document).ready(function () {
     $('#join_channel').click(()=>{
         const channel = $('#channel').val();
         const key = $('#channel-key').val();
-        const isDm = $('#isDm').val();
+        const isDm = $('#isDm').is(':checked')
 
         $('#channel').val('');
         $('#channel-key').val('');
+
         joinChannel(channel, key, isDm);
+        toggleOpenChannel();
     });
 });
 
@@ -254,7 +265,11 @@ function cleanChannelCss(channel){
 };
 
 function joinChannel(channel, key, isDm) {
-    console.log(isDm);
+    if(isDm){
+        openDirectMessage(channel);
+        return;
+    }
+
     axios.post('http://127.0.0.1:3000/channel/join', {
         channel: channel,
         key: key

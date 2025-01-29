@@ -32,6 +32,7 @@ export class SocketService {
         socket: socket,
         user: "",
       });
+      // Channel Message
       socket.on("client:message", async (message) => {
         var channel = "Global";
         if (message.channel) channel = message.channel;
@@ -48,6 +49,20 @@ export class SocketService {
 
         await MongooseDal.addMessage(message.channel, messageStore);
       });
+
+      // Direct Message
+      socket.on("client:direct", async (message) => {
+        const directMessage: IDirectMessage = {
+          sender: message.from,
+          owner: message.to,
+          message: message.message,
+          created_at: new Date(),
+        };
+
+        await MongooseDal.addDirectMessage(directMessage);
+        this.ircClient.say(message.to, message.message);
+      });
+
     });
     return this.io;
   }
