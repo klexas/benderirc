@@ -180,7 +180,7 @@ function addDirectMessage(user) {
     // add the user to the dm list
     $('#dms').empty();
     $.each(dmUsers, function (index, user) {
-        $('#dms').append('<button type="button" onclick="openDirectMessage(\'' + user.user + '\')" class="btn btn-secondary">' + user.user + '</button>');
+        $('#dms').append('<li class="flex items-center space-x-4" onclick="openDirectMessage(\'' + user.user + '\')"><i class="fas fa-user"></i><span class="text-sm font-medium">' + user.user + ' [' + user.messages.length + ']</span></li>');
     });
 }
 
@@ -212,6 +212,26 @@ function openChannel(channel, key, isDm) {
     cleanChannelCss(channel);
     joinChannel(channel, key, isDm);
 };
+
+function openDirectMessage(user) {
+    selectedChannel = user;
+    cleanChannelCss(user);
+    // /join/dm/:nick
+    axios.post('http://127.0.0.1:3000/join/dm/' + selectedChannel).then((response) => {
+        $('#channel_name').text(user);
+        $('#messages').empty();
+        console.log(response);
+        $('#messages').animate({ scrollTop: $('#chat_area').prop("scrollHeight")}, 10);
+        for (let i = 0; i < response.data.messages.length; i++) {
+            addMessage({
+                user: response.data.messages[i].sender,
+                message: response.data.messages[i].message
+            });
+        }
+    }).catch((error) => {
+        console.log(error);
+    });
+}
 
 function cleanChannelCss(channel){
     var cleanChannel = channel;

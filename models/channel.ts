@@ -6,6 +6,13 @@ interface IMessage {
     created_at: Date;
 }
 
+interface IDirectMessage {
+    sender: string;
+    owner: string;
+    message: string;
+    created_at: Date;
+}
+
 // Interface for Channel
 interface IChannel {
     owner: string; // TODO: Owner ID - all this should be in SQL
@@ -28,6 +35,14 @@ const channelSchema = new Schema<IChannel>({
     active: { type: Boolean, default: true }
 });
 
-const Channel = model<IChannel>('Channel', channelSchema);
+const directMessageSchema = new Schema<IDirectMessage>({
+    owner: { type: String, required: true },
+    sender: { type: String, required: true },
+    message: { type: String, required: true },
+    created_at: { type: Date, default: Date.now }
+});
 
-export { Channel, IChannel, IMessage };
+const Channel = model<IChannel>('Channel', channelSchema);
+const DirectMessage = model<IDirectMessage>('DirectMessage', directMessageSchema);
+
+export { Channel, DirectMessage, IChannel, IMessage, IDirectMessage };

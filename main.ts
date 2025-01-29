@@ -41,6 +41,12 @@ app.post("/connect", isLoggedIn, connect(clientService));
 app.use("/static", Express.static("public"));
 app.use("/login", Express.static("public/login/login.html"));
 
+app.post("/join/dm/:nick", isLoggedIn, async (req, res) => {
+  const nick = req.params.nick;
+  var dms = await MongooseDal.getDirectMessagesForUser(UserSettings.nick, nick);
+  res.send({ nick: nick, messages: dms });
+});
+
 app.post("/channel/join", isLoggedIn, async (req, res) => {
   const socketConnections = socketService.getConnections();
   const channel = client.channel("#" + req.body.channel, req.body.key);

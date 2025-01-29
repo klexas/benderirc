@@ -59,6 +59,8 @@
 
         <!-- User List Area -->
         <div class="logged-in fixed right-0 top-0 h-full w-64 bg-gray-900 border-l border-gray-600 p-4 overflow-y-auto slide-in hidden" id="userList">
+            <h2 class="text-xl mb-4">DM's</h2>
+            <ul class="space-y-4" id="dms"></ul>
             <h2 class="text-xl mb-4">Users</h2>
             <ul class="space-y-4" id="users"></ul>
         </div>
@@ -75,7 +77,6 @@
             </div>
         </div>
         </body>
-
 
         <script>
            document.getElementById('toggleButton').addEventListener('click', function() {
