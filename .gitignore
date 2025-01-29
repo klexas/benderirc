@@ -7,3 +7,5 @@ yarn-error.log
 *.tsbuildinfo
 *.js.map
 dist/
+
+.vim
