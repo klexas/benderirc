@@ -14,14 +14,17 @@
     </head>
 
     <body class="bg-gray-800 text-white font-sans">
-
         <!-- Popup modal to join a Channel -->
-        <div id="join-channel-popup" class="fixed top-0 left-0 right-0 bottom-0 bg-gray-900 bg-opacity-50 flex justify-center items-center hidden" id="joinChannelModal">
+        <div id="join-channel-popup" class="fixed top-0 left-0 right-0 bottom-0 bg-gray-900 bg-opacity-50 flex justify-center items-center channel-open hidden" id="joinChannelModal">
             <div class="bg-gray-800 p-8 rounded-lg max-w-lg">
-                <h2 class="text-xl mb
-                -4">Join a channel</h2>
+                <h2 class="text-xl mb-4">Join a channel</h2>
                 <input type="text" id="channel" class="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 mt-4" placeholder="Channel name" />
-                <button class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg mt-4" id="joinChannel">Join</button>
+                <input type="text" id="channel-key" class="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 mt-4" placeholder="Key (Optional)" />
+                <div class="flex items addEventListener-center mt-4">
+                    <input type="checkbox" id="isDM" class="mr-2" />
+                    <label for="isDM">Direct Message</label>
+                </div>
+                <button class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg mt-4" id="join_channel">Join</button>
             </div>
         </div>
 
@@ -46,6 +49,8 @@
         <!-- Top bar with connected channels -->
         <div class="logged-in fixed top-0 left-0 right-0 bg-gray-900 border-b border-gray-600 p-4 flex justify-between items-center hidden">
             <div class="flex space-x-4" id="channels"></div>
+            <!-- Join Channel button -->
+             <button class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg" onclick="toggleOpenChannel()">Join Channel</button>
             <button class="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg" id="disconnect">Disconnect</button>
         </div>
         
