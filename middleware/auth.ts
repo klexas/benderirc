@@ -55,7 +55,6 @@ const getUser = async (req, res) => {
     if (!token) res.status(401).json({ error: "malformed auth header" });
 
     const payload = await jwt.verify(token, SECRET_KEY);
-    logger.log.magenta("Payload", payload);
     return payload;
 };
 

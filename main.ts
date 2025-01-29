@@ -64,6 +64,7 @@ app.post("/channel/join", isLoggedIn, async (req, res) => {
   };
 
   var channelMessages = await MongooseDal.getMessagesForChannel(req.body.channel);
+  
 
   await MongooseDal.createChannel(channelMongo);
 
@@ -73,7 +74,7 @@ app.post("/channel/join", isLoggedIn, async (req, res) => {
       socket.socket.emit("channel:joined", {
         channel: req.body.channel,
         users: users,
-        messages: channelMessages.messages
+        messages: channelMessages?.messages || [],
       });
     });
     res.send({ users: users, channel: req.body.channel });
