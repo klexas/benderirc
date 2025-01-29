@@ -89,11 +89,13 @@ $(document).ready(function () {
     });
 
     $('#join_channel').click(()=>{
-        var channel = $('#channel').val();
-        var key = $('#key').val();
+        const channel = $('#channel').val();
+        const key = $('#channel-key').val();
+        const isDm = $('#isDm').val();
+
         $('#channel').val('');
-        $('#key').val('');  
-        joinChannel(channel, key);
+        $('#channel-key').val('');
+        joinChannel(channel, key, isDm);
     });
 });
 
@@ -194,6 +196,16 @@ function toggleLoggedIn() {
     $('.logged-out').addClass('hidden');
 }
 
+function toggleOpenChannel() {
+    if ($('.channel-open').hasClass('hidden')) {
+        $('.channel-open').removeClass('hidden');
+        $('.channel-closed').addClass('hidden');
+    } else {
+        $('.channel-open').addClass('hidden');
+        $('.channel-closed').removeClass('hidden');
+    }
+}
+
 function notifyChannel(channel) {
     var notifyChannel = channel;
     channel[0] == '#' ? notifyChannel = channel.substring(1) : notifyChannel = channel;
@@ -242,6 +254,7 @@ function cleanChannelCss(channel){
 };
 
 function joinChannel(channel, key, isDm) {
+    console.log(isDm);
     axios.post('http://127.0.0.1:3000/channel/join', {
         channel: channel,
         key: key
