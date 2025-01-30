@@ -1,6 +1,6 @@
 import { Client } from "irc-framework";
 import { Server } from "socket.io";
-import { IDirectMessage, IMessage } from "../models/channel";
+import { IDirectMessages, IMessage } from "../models/channel";
 import UserSettings from "../config";
 import MongooseDal from "./mongo";
 import Utils from "./utils";
@@ -52,15 +52,14 @@ export class SocketService {
 
       // Direct Message
       socket.on("client:direct", async (message) => {
-        const directMessage: IDirectMessage = {
-          sender: message.from,
-          owner: message.to,
-          message: message.message,
-          created_at: new Date(),
-        };
-
-        await MongooseDal.addDirectMessage(directMessage);
-        this.ircClient.say(message.to, message.message);
+        const owner = UserSettings.nick; // TODO : get session user
+        const directMessage: IMessage = {
+            sender: owner,
+            message: message.message,
+            created_at: new Date(),
+          };
+          await MongooseDal.addDirectMessage(owner, message.to, directMessage);
+          this.ircClient.say(message.to, message.message);
       });
 
     });
@@ -84,14 +83,13 @@ export class SocketService {
   }
 
   async sendDirectMessageAsync(message: string, nick: string) {
-    const directMessage: IDirectMessage = {
-      sender: nick,
-      owner: UserSettings.nick,
-      message: message,
-      created_at: new Date(),
-    };
-
-    await MongooseDal.addDirectMessage(directMessage);
+    const owner = UserSettings.nick; // TODO : get session user
+    const directMessage: IMessage = {
+        sender: nick,
+        message: message,
+        created_at: new Date(),
+      };
+      await MongooseDal.addDirectMessage(owner, nick, directMessage);
 
     console.log("sending direct message to " + nick);
     this.io.emit("chat:direct", {

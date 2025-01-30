@@ -6,10 +6,10 @@ interface IMessage {
     created_at: Date;
 }
 
-interface IDirectMessage {
-    sender: string;
+interface IDirectMessages {
     owner: string;
-    message: string;
+    external_user: string;
+    messages: Array<IMessage>;
     created_at: Date;
 }
 
@@ -35,14 +35,14 @@ const channelSchema = new Schema<IChannel>({
     active: { type: Boolean, default: true }
 });
 
-const directMessageSchema = new Schema<IDirectMessage>({
+const directMessageSchema = new Schema<IDirectMessages>({
     owner: { type: String, required: true },
-    sender: { type: String, required: true },
-    message: { type: String, required: true },
+    external_user: { type: String, required: true },
+    messages: { type: [new Schema<IMessage>({ sender: String, message: String, created_at: { type: Date, default: Date.now } })], default: [] },
     created_at: { type: Date, default: Date.now }
 });
 
 const Channel = model<IChannel>('Channel', channelSchema);
-const DirectMessage = model<IDirectMessage>('DirectMessage', directMessageSchema);
+const DirectMessages = model<IDirectMessages>('DirectMessages', directMessageSchema);
 
-export { Channel, DirectMessage, IChannel, IMessage, IDirectMessage };
+export { Channel, DirectMessages, IChannel, IMessage, IDirectMessages };
