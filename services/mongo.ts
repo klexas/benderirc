@@ -1,6 +1,6 @@
 // Mongoose controller
 import mongoose from "mongoose";
-import { Channel, DirectMessage, IChannel, IMessage, IDirectMessage } from "../models/channel";
+import { Channel, DirectMessages, IChannel, IMessage } from "../models/channel";
 import { MessageQueue, IMessageQueue } from "../models/messageQueue";
 
 // MONGODB MONGOOS DAL CLASS
@@ -31,10 +31,6 @@ const MongooseDal = {
 
         return Channel.updateOne( { name: channelName }, { $push: { messages: message }, updated_at: new Date() });
     },
-    addDirectMessage: async (message: IDirectMessage) => {
-        console.log(message);
-        return await DirectMessage.create(message);
-    },
     getChannelsForUser: async (username: string) => {
        return await Channel.find({ owner: username, active: true }, { name: 1, updated_at: 1 });
     },
@@ -42,8 +38,16 @@ const MongooseDal = {
         var messages =  await Channel.findOne({ name: channelName }, { messages: 1 });
         return messages;
     },
-    getDirectMessagesForUser: async (owner: string, sender: string) => {
-        return await DirectMessage.find({ owner, sender });
+    getDirectMessagesForUser: async (owner: string, external_user: string) => {
+        return await DirectMessages.findOne({ owner, external_user }, { messages: 1 });
+    },
+    addDirectMessage: async (owner:string, external_user:string, message:IMessage) => {
+        const directMessage = await DirectMessages.findOne({ owner, external_user });
+        if (!directMessage) {
+            return await DirectMessages.create({ owner, external_user, messages: [message] });
+        } else {
+            return await DirectMessages.updateOne({ owner, external_user }, { $push: { messages: message } });
+        }
     },
     addMessageToQueue: async (message: IMessageQueue) => {
         return await MessageQueue.create(message);

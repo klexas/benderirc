@@ -143,8 +143,12 @@ socket.on('channel:list', function (data) {
 socket.on('channel:parted', function (data) {
     $('#users').empty();
     $('#messages').empty();
+    // Sort the users by their modes
+    data.users.sort((a, b) => (a.modes > b.modes ? 1 : -1));
     $.each(data.users, function (index, user) {
-        $('#users').append('<li class="flex items-center space-x-4"><i class="fas fa-user"></i><span class="text-sm font-medium">' + user.nick + ' [' + user.modes + ']</span></li>');
+        $('#users').append('<li class="flex items-center space-x-4"onclick="openDirectMessage(\'' 
+            + user.user + '\')"><i class="fas fa-user"></i><span class="text-sm font-medium">' 
+            + user.nick + ' [' + user.modes + ']</span></li>');
     });
     $('#channel_name').text('ChanServe');
     selectedChannel = 'ChanServe';
@@ -152,11 +156,18 @@ socket.on('channel:parted', function (data) {
 });
 
 socket.on('channel:joined', function (data) {
+    if(!data.users || data.users.length <= 1){
+        openDirectMessage(data.channel);
+        return;
+    }
     data.channel[0] == '#' ? selectedChannel = data.channel.substring(1) : selectedChannel = data.channel;
     $('#users').empty();
     $('#messages').empty();
+    data.users.sort((a, b) => (a.modes > b.modes ? 1 : -1));
     $.each(data.users, function (index, user) {
-        $('#users').append('<li class="flex items-center space-x-4"><i class="fas fa-user"></i><span class="text-sm font-medium">' + user.nick + ' [' + user.modes + ']</span></li>');
+        $('#users').append('<li class="flex items-center space-x-4"onclick="openDirectMessage(\'' 
+            + user.nick + '\')"><i class="fas fa-user"></i><span class="text-sm font-medium">' 
+            + user.nick + ' [' + user.modes + ']</span></li>');
     });
     // add to channels if not exists
     if(!channels.filter(channel => channel.name == data.channel).length > 0){
