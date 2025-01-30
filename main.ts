@@ -44,7 +44,6 @@ app.use("/login", Express.static("public/login/login.html"));
 app.post("/join/dm/:nick", isLoggedIn, async (req, res) => {
   const nick = req.params.nick;
   var dms = await MongooseDal.getDirectMessagesForUser(UserSettings.nick, nick);
-  console.log(dms);
   res.send({ nick: nick, messages: dms?.messages || [] });
 });
 
@@ -65,8 +64,6 @@ app.post("/channel/join", isLoggedIn, async (req, res) => {
   };
 
   var channelMessages = await MongooseDal.getMessagesForChannel(req.body.channel);
-  
-
   await MongooseDal.createChannel(channelMongo);
 
   channel.updateUsers(() => {
