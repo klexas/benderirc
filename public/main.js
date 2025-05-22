@@ -55,10 +55,12 @@ $(document).ready(function () {
         sendMessage();
     });
 
+    // Comment out or remove old connect logic
+    /*
     $('#connect').click(()=>{
         toggleLoggedIn();
         $('#channel_name').text(selectedChannel);
-        axios.post('http://127.0.0.1:3000/connect').then((response)=>{
+        axios.post('http://127.0.0.1:3000/connect').then((response)=>{ // This was the old connect endpoint
             channels = response.data.state;
             currentNick = response.data.nick;
             $('#prefix_nick').text(currentNick);
@@ -71,6 +73,62 @@ $(document).ready(function () {
                 window.location.href = '/login';
             }
         });
+    });
+    */
+
+    if ($('.logged-out#connect').is(':visible')) { 
+        populateServerSelect();
+    }
+    
+    $('#connect-to-selected-server-btn').click(function() {
+        const selectedServerName = $('#server-select').val();
+        if (!selectedServerName) {
+            alert('Please select a server.');
+            return;
+        }
+
+        let serverConfig = null;
+        if (typeof userServersCache !== 'undefined' && Array.isArray(userServersCache)) {
+            serverConfig = userServersCache.find(s => s.name === selectedServerName);
+        }
+
+        if (!serverConfig) {
+            alert('Server configuration not found. Please try reloading or manage servers.');
+            // Attempt to refresh cache and try again, or prompt user to manage servers.
+            // For now, simple alert. Could call populateServerSelect() and then re-check.
+            populateServerSelect(); // Try to refresh the cache
+            serverConfig = userServersCache.find(s => s.name === selectedServerName); // try finding again
+            if(!serverConfig){
+                 alert('Still cannot find server configuration. Please use "Manage Servers" to add or check your configurations.');
+                 return;
+            }
+        }
+        
+        // The new connect endpoint is /api/irc/connect
+        axios.post('/api/irc/connect', serverConfig)
+            .then(function(response) {
+                toggleLoggedIn(); 
+                currentNick = response.data.nick;
+                $('#prefix_nick').text(currentNick);
+                
+                const channelsToJoin = response.data.channels || [];
+                $('#channels').empty(); 
+                channelsToJoin.forEach(function(channelName) {
+                    // Ensure channelName is treated as a string and remove potential leading # for ID consistency
+                    const cleanChannelName = String(channelName).replace(/^#/, '');
+                    $('#channels').append('<button id="channel_'+ cleanChannelName +'" class="bg-purple-600 hover:bg-red-700 text-white font-small py-2 px-4 rounded-lg" onclick="openChannel(\'' + channelName + '\')">' + channelName + '</button>');
+                });
+                
+                if (channelsToJoin.length > 0) {
+                    openChannel(channelsToJoin[0]); 
+                } else {
+                    openChannel('ChanServ'); 
+                }
+            })
+            .catch(function(error) {
+                console.error('Error connecting to IRC server:', error);
+                alert('Failed to connect: ' + (error.response?.data?.message || error.message));
+            });
     });
 
     $('#disconnect').click(()=>{
@@ -291,3 +349,201 @@ function joinChannel(channel, key, isDm) {
         console.log(error);
     });
 };
+
+// --- BEGIN SERVER MANAGEMENT UI LOGIC ---
+let currentEditServerName = null;
+// Ensure userServersCache is initialized here if not already; it is used by populateServerSelect and connect button
+let userServersCache = []; 
+
+// Function to populate server selection dropdown
+function populateServerSelect() {
+    axios.get('/api/user/servers') 
+        .then(function(response) {
+            const servers = response.data;
+            const selectElement = $('#server-select');
+            selectElement.empty(); 
+
+            if (servers && servers.length > 0) {
+                $('#no-servers-message').addClass('hidden');
+                $('#connect-to-selected-server-btn').prop('disabled', false);
+                servers.forEach(function(server) {
+                    selectElement.append($('<option>', {
+                        value: server.name, 
+                        text: server.name 
+                    }));
+                });
+                userServersCache = servers; // Update cache
+            } else {
+                $('#no-servers-message').removeClass('hidden');
+                $('#connect-to-selected-server-btn').prop('disabled', true);
+                userServersCache = []; // Clear cache
+            }
+        })
+        .catch(function(error) {
+            console.error('Error loading servers for select:', error);
+            $('#no-servers-message').text('Error loading servers.').removeClass('hidden');
+            userServersCache = []; // Clear cache on error
+        });
+}
+// Toggle Server Management Modal
+$('#manage-servers-btn').click(function() {
+    const modal = $('#server-management-modal');
+    if (modal.hasClass('hidden')) {
+        modal.removeClass('hidden');
+        loadUserServers();
+    } else {
+        modal.addClass('hidden');
+        $('#server-form').addClass('hidden'); // Also hide form if open
+    }
+});
+
+// Close modal button
+$('#close-server-modal-btn').click(function() {
+    $('#server-management-modal').addClass('hidden');
+    $('#server-form').addClass('hidden');
+});
+
+
+function loadUserServers() {
+    axios.get('/api/user/servers')
+        .then(function(response) {
+            userServersCache = response.data; // Cache the server data
+            const serverList = $('#server-list');
+            serverList.empty();
+            if (userServersCache.length === 0) {
+                serverList.append('<li class="text-gray-400">No servers configured yet.</li>');
+                return;
+            }
+            userServersCache.forEach(function(server) {
+                const channelsText = server.channels && server.channels.length > 0 ? server.channels.join(', ') : 'None';
+                const listItem = `
+                    <li class="bg-gray-700 p-3 rounded-md shadow">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <h3 class="text-lg font-semibold text-white">${server.name}</h3>
+                                <p class="text-sm text-gray-300">${server.host}:${server.port} (Nick: ${server.nick})</p>
+                                <p class="text-xs text-gray-400">Channels: ${channelsText}</p>
+                            </div>
+                            <div>
+                                <button class="edit-server-btn bg-blue-500 hover:bg-blue-600 text-white py-1 px-3 rounded-md text-sm mr-2" data-servername="${server.name}">Edit</button>
+                                <button class="delete-server-btn bg-red-500 hover:bg-red-600 text-white py-1 px-3 rounded-md text-sm" data-servername="${server.name}">Delete</button>
+                            </div>
+                        </div>
+                    </li>
+                `;
+                serverList.append(listItem);
+            });
+
+            // Attach event listeners
+            $('.edit-server-btn').click(handleEditServer);
+            $('.delete-server-btn').click(handleDeleteServer);
+        })
+        .catch(function(error) {
+            console.error('Error loading servers:', error);
+            $('#server-list').empty().append('<li class="text-red-400">Error loading servers.</li>');
+            alert('Error loading servers: ' + (error.response?.data?.message || error.message));
+        });
+}
+
+$('#add-server-btn').click(function() {
+    currentEditServerName = null;
+    $('#server-form')[0].reset(); // Reset form fields
+    $('#server-original-name').val(''); // Clear hidden field
+    $('#server-form h3').text('Add New Server'); // Optional: change form title
+    $('#server-form').removeClass('hidden');
+    $('#server-list-container').addClass('hidden'); // Hide server list
+    $('#add-server-btn').addClass('hidden'); // Hide add button
+});
+
+function handleEditServer() {
+    currentEditServerName = $(this).data('servername');
+    const serverData = userServersCache.find(s => s.name === currentEditServerName);
+
+    if (serverData) {
+        $('#server-original-name').val(serverData.name);
+        $('#server-name').val(serverData.name);
+        $('#server-host').val(serverData.host);
+        $('#server-port').val(serverData.port);
+        $('#server-nick').val(serverData.nick);
+        $('#server-password').val(serverData.password || '');
+        $('#server-realname').val(serverData.realname || '');
+        $('#server-channels').val(serverData.channels ? serverData.channels.join(',') : '');
+        
+        $('#server-form h3').text('Edit Server'); // Optional: change form title
+        $('#server-form').removeClass('hidden');
+        $('#server-list-container').addClass('hidden'); // Hide server list
+        $('#add-server-btn').addClass('hidden'); // Hide add button
+    } else {
+        alert('Could not find server data to edit.');
+    }
+}
+
+function handleDeleteServer() {
+    const serverNameToDelete = $(this).data('servername');
+    if (confirm(`Are you sure you want to delete server "${serverNameToDelete}"?`)) {
+        axios.delete(`/api/user/servers/${serverNameToDelete}`)
+            .then(function(response) {
+                alert('Server deleted successfully.');
+                loadUserServers(); // Refresh list
+            })
+            .catch(function(error) {
+                console.error('Error deleting server:', error);
+                alert('Error deleting server: ' + (error.response?.data?.message || error.message));
+            });
+    }
+}
+
+$('#server-form').submit(function(event) {
+    event.preventDefault();
+    const serverName = $('#server-name').val();
+    const serverHost = $('#server-host').val();
+    const serverPort = parseInt($('#server-port').val(), 10);
+    const serverNick = $('#server-nick').val();
+    const serverPassword = $('#server-password').val();
+    const serverRealname = $('#server-realname').val();
+    const channelsRaw = $('#server-channels').val();
+    const channels = channelsRaw ? channelsRaw.split(',').map(ch => ch.trim()).filter(ch => ch) : [];
+
+    const serverData = {
+        name: serverName,
+        host: serverHost,
+        port: serverPort,
+        nick: serverNick,
+        password: serverPassword,
+        realname: serverRealname,
+        channels: channels
+    };
+
+    let request;
+    if (currentEditServerName) {
+        // Use original name for URL, new data (which might include new name) in body
+        const originalName = $('#server-original-name').val() || currentEditServerName; 
+        request = axios.put(`/api/user/servers/${originalName}`, serverData);
+    } else {
+        request = axios.post('/api/user/servers', serverData);
+    }
+
+    request.then(function(response) {
+        alert(`Server ${currentEditServerName ? 'updated' : 'added'} successfully.`);
+        $('#server-form').addClass('hidden');
+        $('#server-form')[0].reset();
+        currentEditServerName = null;
+        $('#server-list-container').removeClass('hidden'); // Show server list
+        $('#add-server-btn').removeClass('hidden'); // Show add button
+        loadUserServers(); // Refresh list
+    })
+    .catch(function(error) {
+        console.error('Error saving server:', error);
+        alert('Error saving server: ' + (error.response?.data?.message || error.message));
+    });
+});
+
+$('#cancel-server-form').click(function() {
+    $('#server-form').addClass('hidden');
+    $('#server-form')[0].reset();
+    currentEditServerName = null;
+    $('#server-list-container').removeClass('hidden'); // Show server list
+    $('#add-server-btn').removeClass('hidden'); // Show add button
+});
+
+// --- END SERVER MANAGEMENT UI LOGIC ---

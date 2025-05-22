@@ -1,58 +1,140 @@
 import { Client } from "irc-framework";
-import UserSettings from "../config";
 import { SocketService } from "./socket";
 import logger from "mercedlogger";
 
+// Define the interface for IRC server configuration
+export interface IrcServerConfig {
+  name: string; // Unique name for the server configuration
+  host: string;
+  port: number;
+  nick: string;
+  username?: string; // Usually the same as nick
+  password?: string;
+  realname?: string;
+  channels?: string[];
+  secure?: boolean; // For SSL/TLS connections
+  selfSigned?: boolean; // Allow self-signed certificates for secure connections
+  certExpired?: boolean; // Allow expired certificates for secure connections
+}
+
 export default class IrcService {
-  private client: Client;
+  private clients: Map<string, Client> = new Map();
   private socketService: SocketService;
 
   constructor(socketService: SocketService) {
-    this.client = new Client();
     this.socketService = socketService;
-    this.socketService.registerClient(this.client);
+    // this.socketService.registerClient(this.client); // Re-evaluate this: socketService might need a new way to handle multiple clients
   }
 
-  public connect() {
-    if (!this.client.connected)
-      try {
-        this.client.connect(UserSettings);
-      } catch (err) {
-        console.log(err);
+  private generateClientKey(userId: string, serverName: string): string {
+    return `${userId}_${serverName}`;
+  }
+
+  public connect(userId: string, serverConfig: IrcServerConfig) {
+    const clientKey = this.generateClientKey(userId, serverConfig.name);
+    
+    if (this.clients.has(clientKey)) {
+      const existingClient = this.clients.get(clientKey);
+      if (existingClient && existingClient.connected) {
+        logger.info(`Already connected to ${serverConfig.name} for user ${userId}`);
+        return;
       }
+    }
+
+    const newClient = new Client();
+    this.configureSingleClient(newClient, userId, serverConfig.name);
+    this.clients.set(clientKey, newClient);
+
+    try {
+      logger.info(`Connecting to ${serverConfig.host} for user ${userId} with nick ${serverConfig.nick}`);
+      newClient.connect({
+        host: serverConfig.host,
+        port: serverConfig.port,
+        nick: serverConfig.nick,
+        username: serverConfig.username || serverConfig.nick,
+        password: serverConfig.password,
+        realname: serverConfig.realname,
+        channels: serverConfig.channels,
+        secure: serverConfig.secure,
+        selfSigned: serverConfig.selfSigned,
+        certExpired: serverConfig.certExpired,
+      });
+    } catch (err) {
+      logger.error(`Error connecting to ${serverConfig.name} for user ${userId}:`, err);
+      this.clients.delete(clientKey); // Clean up if connection fails immediately
+    }
   }
 
-  public getClient() {
-    return this.client;
+  public getClient(userId: string, serverName: string): Client | undefined {
+    const clientKey = this.generateClientKey(userId, serverName);
+    return this.clients.get(clientKey);
   }
 
-  public configureClient() {
-    this.client.on("socket close", (e) => {
-      console.log(e);
-      console.log("socket closed");
+  private configureSingleClient(client: Client, userId: string, serverName: string) {
+    client.on("socket connect", () => {
+        logger.info(`Socket connected for ${userId} on ${serverName}`);
     });
 
-    this.client.on(
+    client.on("socket close", (e) => {
+      logger.warn(`Socket closed for ${userId} on ${serverName}`, e);
+      // Optionally, attempt to reconnect or notify the user
+      // const clientKey = this.generateClientKey(userId, serverName);
+      // this.clients.delete(clientKey); // remove client from map on disconnect
+    });
+
+    client.on(
       "message",
       async (event: { nick: any; target: string; message: any }) => {
-        // TODO: This is for the POC - this should have a DTO and also is XSS vulnerable.
         logger.log.magenta({
           user: event.nick,
+          server: serverName, // Add server context
+          userId: userId, // Add user context
           channel: event.target,
           message: event.message,
         });
 
-        if(event.target[0] === "#" || event.target == "AUTH") // Channel message
-          await this.socketService.sendMessageAsync(event.target, event.message, event.nick);
-        else // Direct message
-          await this.socketService.sendDirectMessageAsync(event.message, event.nick);
+        // Pass userId and serverName to socketService methods (requires socketService modification)
+        if(event.target[0] === "#" || event.target === "*") { // Channel message or server message (like MOTD part)
+            // Consider prefixing channel with serverName if channels can have same name across servers
+            await this.socketService.sendMessageAsync(event.target, event.message, event.nick, userId, serverName);
+        } else { // Direct message
+            await this.socketService.sendDirectMessageAsync(event.message, event.nick, userId, serverName);
+        }
       }
     );
-
-    this.client.on("error", (event) => {
-      console.log(event);
+    
+    client.on("registered", (event) => {
+        logger.info(`Registered to ${serverName} for user ${userId}: ${event.nick}`);
+        // Auto-join channels if specified in serverConfig
+        const serverConfig = (client as any).options; // A bit of a hack to get config back, better to store it alongside client
+        if (serverConfig && serverConfig.channels && serverConfig.channels.length > 0) {
+            serverConfig.channels.forEach((channel: string) => {
+                logger.info(`Auto-joining channel ${channel} on ${serverName} for user ${userId}`);
+                client.join(channel);
+            });
+        }
     });
 
-    return this.client;
+    client.on("error", (event) => {
+      logger.error(`IRC Error for ${userId} on ${serverName}:`, event);
+    });
+
+    // Add more event handlers as needed, e.g., 'join', 'part', 'kick', 'invite', 'notice'
+    client.on("join", (event) => {
+        logger.info(`${event.nick} joined ${event.channel} on ${serverName} (User: ${userId})`);
+        // Potentially notify socketService
+    });
+
+    client.on("part", (event) => {
+        logger.info(`${event.nick} left ${event.channel} on ${serverName} (User: ${userId})`);
+        // Potentially notify socketService
+    });
+    
+    client.on("nick", (event) => {
+        logger.info(`${event.old_nick} is now known as ${event.new_nick} on ${serverName} (User: ${userId})`);
+        // Potentially update stored nick or notify socketService
+    });
+
+    // return client; // No longer needed as this method configures in place
   }
 }
