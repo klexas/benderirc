@@ -1,0 +1,48 @@
+.main-layout {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden; /* Prevent scrollbars on the main layout */
+}
+
+.layout-left-panel {
+  width: 240px; /* Standard Discord left panel width */
+  background-color: #2f3136; /* Discord's dark sidebar color */
+  color: #dcddde; /* Light text color for dark background */
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto; /* Allow scrolling if content overflows */
+}
+
+.layout-middle-panel {
+  flex-grow: 1; /* Takes up remaining space */
+  background-color: #36393f; /* Discord's main content area color */
+  color: #dcddde;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.layout-right-panel {
+  width: 240px; /* Standard Discord right panel width (e.g., user list) */
+  background-color: #2f3136;
+  color: #dcddde;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+/* Basic scrollbar styling for webkit browsers (Chrome, Safari) */
+/* You might want to expand on this or use a library for more consistent scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: #202225; /* Darker scrollbar thumb */
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background-color: #2f3136; /* Match panel background */
+}

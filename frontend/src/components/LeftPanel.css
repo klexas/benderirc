@@ -1,0 +1,130 @@
+.left-panel {
+  display: flex;
+  height: 100%;
+  background-color: #2f3136; /* Discord's darker sidebar color, ensures it fills MainLayout's left panel */
+  color: #8e9297; /* Discord's typical channel/DM text color */
+}
+
+.server-list {
+  width: 72px; /* Standard Discord server list width */
+  background-color: #202225; /* Even darker background for server icons */
+  padding-top: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow-y: auto; /* If many servers */
+}
+
+.server-icon {
+  width: 48px;
+  height: 48px;
+  background-color: #36393f; /* Default server icon color */
+  border-radius: 50%; /* Circular icons */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #dcddde;
+  font-weight: bold;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: border-radius 0.15s ease-out, background-color 0.15s ease-out;
+}
+
+.server-icon:hover {
+  border-radius: 16px; /* Rounded square on hover */
+  background-color: #5865f2; /* Discord's brand color */
+}
+
+.server-icon.active {
+  border-radius: 16px;
+  background-color: #5865f2; /* Active server indication */
+}
+
+.server-icon.dm-icon {
+  background-color: #4f545c; /* Slightly different for DMs icon */
+}
+.server-icon.dm-icon:hover {
+  background-color: #5865f2;
+}
+
+
+.server-separator {
+  width: 32px;
+  height: 2px;
+  background-color: #2d2f34; /* Separator color */
+  border: none;
+  margin: 4px 0 8px 0;
+}
+
+.channel-list {
+  flex-grow: 1;
+  padding: 12px 8px 12px 0px; /* No left padding, server list acts as visual boundary */
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto; /* Allow scrolling for channels/DMs */
+}
+
+.list-header {
+  padding: 8px 8px 4px 16px; /* More left padding for headers */
+  font-size: 12px;
+  font-weight: 600;
+  color: #96989d; /* Header text color */
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.channel-item {
+  padding: 6px 8px 6px 16px; /* Consistent padding */
+  border-radius: 4px;
+  margin: 1px 8px 1px 8px; /* Margin around items */
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  color: #8e9297;
+}
+
+.channel-item:hover {
+  background-color: #3a3c43; /* Hover state */
+  color: #dcddde;
+}
+
+.channel-item.active { /* For future use */
+  background-color: #40444b;
+  color: #ffffff;
+}
+
+.channel-icon {
+  margin-right: 6px;
+  font-weight: bold;
+  color: #72767d; /* Icon color */
+}
+.channel-item:hover .channel-icon {
+  color: #b9bbbe;
+}
+
+
+.dm-avatar-placeholder {
+  width: 20px;
+  height: 20px;
+  background-color: #72767d; /* Placeholder color */
+  border-radius: 50%;
+  margin-right: 8px;
+}
+.channel-item:hover .dm-avatar-placeholder {
+  background-color: #b9bbbe;
+}
+
+/* Basic scrollbar styling for channel-list (similar to MainLayout) */
+.channel-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.channel-list::-webkit-scrollbar-thumb {
+  background-color: #202225;
+  border-radius: 3px;
+}
+
+.channel-list::-webkit-scrollbar-track {
+  background-color: transparent; /* Transparent track within the channel list */
+  margin-right:2px; /* Ensure track doesn't touch edge */
+}
