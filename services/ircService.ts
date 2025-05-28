@@ -77,6 +77,7 @@ export default class IrcService {
 
     client.on("socket close", (e) => {
       log.cyan(`Socket closed for ${userId} on ${serverName}`, e);
+      console.log(e);
       // Optionally, attempt to reconnect or notify the user
       // const clientKey = this.generateClientKey(userId, serverName);
       // this.clients.delete(clientKey); // remove client from map on disconnect

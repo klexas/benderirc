@@ -1,13 +1,11 @@
 import Express from "express";
 import Cors from "cors";
 import morgan from "morgan";
-import UserSettings from "./config";
 import MongooseDal from "./services/mongo";
 import { IChannel } from "./models/channel";
 import { routes } from "./router"; // This will include the ircRouter via router/index.ts
 import { createServer } from "http";
 import { SocketService } from "./services/socket";
-// import { connect } from "./router/chanserv"; // This 'connect' was for the old /connect route
 import IrcService from "./services/ircService";
 import { isLoggedIn } from "./middleware/auth";
 
