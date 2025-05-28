@@ -3,6 +3,7 @@ if (!token) {
   window.location.href = '/login';
 }
 var authToken = localStorage.getItem('token');
+let currentConnectedServerName = null;
 axios.defaults.headers['Authorization'] = 'Bearer ' + authToken; 
 axios.headers = {   
     'Content-Type': 'application/json',
@@ -86,6 +87,7 @@ $(document).ready(function () {
         // The new connect endpoint is /api/irc/connect
         axios.post('/api/irc/connect', serverConfig)
             .then(function(response) {
+                currentConnectedServerName = selectedServerName; // Store the connected server name
                 toggleLoggedIn(); 
                 currentNick = response.data.nick;
                 $('#prefix_nick').text(currentNick);
@@ -313,12 +315,18 @@ function cleanChannelCss(channel){
 };
 
 function joinChannel(channel, key, isDm) {
+    if (!currentConnectedServerName) {
+        alert('Please connect to a server before joining a channel.');
+        return;
+    }
+
     if(isDm){
         openDirectMessage(channel);
         return;
     }
 
     axios.post('http://127.0.0.1:3000/channel/join', {
+        serverName: currentConnectedServerName, // New field
         channel: channel,
         key: key
     }).then((response) => {
@@ -364,24 +372,6 @@ function populateServerSelect() {
             userServersCache = []; // Clear cache on error
         });
 }
-// Toggle Server Management Modal
-$('#manage-servers-btn').click(function() {
-    const modal = $('#server-management-modal');
-    if (modal.hasClass('hidden')) {
-        modal.removeClass('hidden');
-        loadUserServers();
-    } else {
-        modal.addClass('hidden');
-        $('#server-form').addClass('hidden'); // Also hide form if open
-    }
-});
-
-// Close modal button
-$('#close-server-modal-btn').click(function() {
-    $('#server-management-modal').addClass('hidden');
-    $('#server-form').addClass('hidden');
-});
-
 
 function loadUserServers() {
     axios.get('/api/user/servers')
@@ -515,6 +505,26 @@ $('#server-form').submit(function(event) {
         console.error('Error saving server:', error);
         alert('Error saving server: ' + (error.response?.data?.message || error.message));
     });
+});
+
+// Toggle Server Management Modal
+$('#manage-servers-btn').click(function() {
+    const modal = $('#server-management-modal');
+    // Check if the modal is currently hidden (jQuery's :visible selector checks computed display style)
+    if (!modal.is(':visible')) {
+        modal.removeClass('hidden').css('display', 'flex'); // Explicitly set display to flex
+        loadUserServers();
+    } else {
+        // When hiding, add 'hidden' back (which sets display:none) and remove any inline css display property
+        modal.addClass('hidden').css('display', ''); 
+        $('#server-form').addClass('hidden'); // Also hide form if open
+    }
+});
+
+// Close modal button
+$('#close-server-modal-btn').click(function() {
+    $('#server-management-modal').addClass('hidden').css('display', ''); // Add hidden back and clear explicit display style
+    $('#server-form').addClass('hidden');
 });
 
 $('#cancel-server-form').click(function() {

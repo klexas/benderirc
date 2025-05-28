@@ -10,7 +10,7 @@
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
         <script src="http://127.0.0.1:3000/socket.io/socket.io.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.1/axios.min.js"></script>
-        <script src="main.js"></script>
+       
     </head>
 
     <body class="bg-gray-800 text-white font-sans">
@@ -68,6 +68,34 @@
             </div>
         </div>
 
+        
+        <!-- User DMS area -->
+        <!-- <div class="logged-in fixed top-40 right-0 h-full w-64 bg-gray-900 border-l border-gray-600 p-4 overflow-y-auto hidden" id="dms">
+            <button class="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg" id="disconnect">Disconnect</button>
+        </div>   -->
+
+        <!-- Chat Area -->
+        <div class="logged-in container mx-auto my-20 mb-20 p-8 border border-gray-600 rounded-lg max-w-4xl bg-gray-900 overflow-y-auto h-full hidden" id="messages"></div>
+
+        <!-- User List Area -->
+        <div class="logged-in fixed right-0 top-0 h-full w-64 bg-gray-900 border-l border-gray-600 p-4 overflow-y-auto slide-in hidden" id="userList">
+            <h2 class="text-xl mb-4">DM's</h2>
+            <ul class="space-y-4" id="dms"></ul>
+            <h2 class="text-xl mb-4">Users</h2>
+            <ul class="space-y-4" id="users"></ul>
+        </div>
+        <button class="logged-in fixed bottom-20 right-4 bg-gray-800 text-white p-2 rounded" id="toggleButton">
+            <i class="fas fa-users"></i>
+        </button>    
+
+        <!-- Text input fixed bottom full width with send button -->
+        <div class="logged-in fixed bottom-0 w-full bg-gray-900 border-t border-gray-600 p-4 hidden">
+            <div class="flex items-center">
+                <div class="text-white font-medium mr-4" id="prefix_nick"></div>
+                <input type="text" id="message" class="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" />
+                <button class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg ml-2" id="message_send">Send</button>
+            </div>
+        </div>
         <!-- Server Management Modal -->
         <div id="server-management-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex justify-center items-center hidden z-50">
             <div class="bg-gray-800 p-8 rounded-lg shadow-xl w-full max-w-2xl">
@@ -124,33 +152,6 @@
             </div>
         </div>
         
-        <!-- User DMS area -->
-        <!-- <div class="logged-in fixed top-40 right-0 h-full w-64 bg-gray-900 border-l border-gray-600 p-4 overflow-y-auto hidden" id="dms">
-            <button class="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg" id="disconnect">Disconnect</button>
-        </div>   -->
-
-        <!-- Chat Area -->
-        <div class="logged-in container mx-auto my-20 mb-20 p-8 border border-gray-600 rounded-lg max-w-4xl bg-gray-900 overflow-y-auto h-full hidden" id="messages"></div>
-
-        <!-- User List Area -->
-        <div class="logged-in fixed right-0 top-0 h-full w-64 bg-gray-900 border-l border-gray-600 p-4 overflow-y-auto slide-in hidden" id="userList">
-            <h2 class="text-xl mb-4">DM's</h2>
-            <ul class="space-y-4" id="dms"></ul>
-            <h2 class="text-xl mb-4">Users</h2>
-            <ul class="space-y-4" id="users"></ul>
-        </div>
-        <button class="logged-in fixed bottom-20 right-4 bg-gray-800 text-white p-2 rounded" id="toggleButton">
-            <i class="fas fa-users"></i>
-        </button>    
-
-        <!-- Text input fixed bottom full width with send button -->
-        <div class="logged-in fixed bottom-0 w-full bg-gray-900 border-t border-gray-600 p-4 hidden">
-            <div class="flex items-center">
-                <div class="text-white font-medium mr-4" id="prefix_nick"></div>
-                <input type="text" id="message" class="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" />
-                <button class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg ml-2" id="message_send">Send</button>
-            </div>
-        </div>
         </body>
 
         <script>
@@ -165,5 +166,5 @@
             }
         });
         </script>
-
+ <script src="main.js"></script>
 </html>

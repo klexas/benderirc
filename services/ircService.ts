@@ -70,6 +70,25 @@ export default class IrcService {
     return this.clients.get(clientKey);
   }
 
+  public joinChannel(userId: string, serverName: string, channelName: string, key?: string): boolean {
+    const clientKey = this.generateClientKey(userId, serverName);
+    const client = this.clients.get(clientKey);
+
+    if (!channelName || typeof channelName !== 'string' || channelName.trim() === '') {
+      log.red(`Failed to join channel: Invalid channel name for user ${userId} on server ${serverName} for channel ${channelName}`);
+      return false;
+    }
+
+    if (client && client.connected) {
+      log.red(`User ${userId} attempting to join channel ${channelName} on server ${serverName}`);
+      client.join(channelName, key);
+      return true;
+    } else {
+      log.red(`Failed to join channel: Client not found or not connected for user ${userId} on server ${serverName} for channel ${channelName}`);
+      return false;
+    }
+  }
+
   private configureSingleClient(client: Client, userId: string, serverName: string) {
     client.on("socket connect", () => {
         log.cyan(`Socket connected for ${userId} on ${serverName}`);
