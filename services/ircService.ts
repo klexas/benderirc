@@ -1,6 +1,6 @@
 import { Client } from "irc-framework";
 import { SocketService } from "./socket";
-import logger from "mercedlogger";
+import { log } from "mercedlogger";
 
 // Define the interface for IRC server configuration
 export interface IrcServerConfig {
@@ -36,7 +36,7 @@ export default class IrcService {
     if (this.clients.has(clientKey)) {
       const existingClient = this.clients.get(clientKey);
       if (existingClient && existingClient.connected) {
-        logger.info(`Already connected to ${serverConfig.name} for user ${userId}`);
+        log.cyan(`Already connected to ${serverConfig.name} for user ${userId}`);
         return;
       }
     }
@@ -46,7 +46,7 @@ export default class IrcService {
     this.clients.set(clientKey, newClient);
 
     try {
-      logger.info(`Connecting to ${serverConfig.host} for user ${userId} with nick ${serverConfig.nick}`);
+      log.cyan(`Connecting to ${serverConfig.host} for user ${userId} with nick ${serverConfig.nick}`);
       newClient.connect({
         host: serverConfig.host,
         port: serverConfig.port,
@@ -60,7 +60,7 @@ export default class IrcService {
         certExpired: serverConfig.certExpired,
       });
     } catch (err) {
-      logger.error(`Error connecting to ${serverConfig.name} for user ${userId}:`, err);
+      log.cyan(`Error connecting to ${serverConfig.name} for user ${userId}:`, err);
       this.clients.delete(clientKey); // Clean up if connection fails immediately
     }
   }
@@ -72,11 +72,11 @@ export default class IrcService {
 
   private configureSingleClient(client: Client, userId: string, serverName: string) {
     client.on("socket connect", () => {
-        logger.info(`Socket connected for ${userId} on ${serverName}`);
+        log.cyan(`Socket connected for ${userId} on ${serverName}`);
     });
 
     client.on("socket close", (e) => {
-      logger.warn(`Socket closed for ${userId} on ${serverName}`, e);
+      log.cyan(`Socket closed for ${userId} on ${serverName}`, e);
       // Optionally, attempt to reconnect or notify the user
       // const clientKey = this.generateClientKey(userId, serverName);
       // this.clients.delete(clientKey); // remove client from map on disconnect
@@ -85,7 +85,7 @@ export default class IrcService {
     client.on(
       "message",
       async (event: { nick: any; target: string; message: any }) => {
-        logger.log.magenta({
+        log.magenta({
           user: event.nick,
           server: serverName, // Add server context
           userId: userId, // Add user context
@@ -96,42 +96,42 @@ export default class IrcService {
         // Pass userId and serverName to socketService methods (requires socketService modification)
         if(event.target[0] === "#" || event.target === "*") { // Channel message or server message (like MOTD part)
             // Consider prefixing channel with serverName if channels can have same name across servers
-            await this.socketService.sendMessageAsync(event.target, event.message, event.nick, userId, serverName);
+            await this.socketService.sendMessageAsync(event.target, event.message, event.nick);
         } else { // Direct message
-            await this.socketService.sendDirectMessageAsync(event.message, event.nick, userId, serverName);
+            await this.socketService.sendDirectMessageAsync(event.message, event.nick);
         }
       }
     );
     
     client.on("registered", (event) => {
-        logger.info(`Registered to ${serverName} for user ${userId}: ${event.nick}`);
+        log.cyan(`Registered to ${serverName} for user ${userId}: ${event.nick}`);
         // Auto-join channels if specified in serverConfig
         const serverConfig = (client as any).options; // A bit of a hack to get config back, better to store it alongside client
         if (serverConfig && serverConfig.channels && serverConfig.channels.length > 0) {
             serverConfig.channels.forEach((channel: string) => {
-                logger.info(`Auto-joining channel ${channel} on ${serverName} for user ${userId}`);
+                log.cyan(`Auto-joining channel ${channel} on ${serverName} for user ${userId}`);
                 client.join(channel);
             });
         }
     });
 
     client.on("error", (event) => {
-      logger.error(`IRC Error for ${userId} on ${serverName}:`, event);
+      log.red(`IRC Error for ${userId} on ${serverName}:`, event);
     });
 
     // Add more event handlers as needed, e.g., 'join', 'part', 'kick', 'invite', 'notice'
     client.on("join", (event) => {
-        logger.info(`${event.nick} joined ${event.channel} on ${serverName} (User: ${userId})`);
+        log.cyan(`${event.nick} joined ${event.channel} on ${serverName} (User: ${userId})`);
         // Potentially notify socketService
     });
 
     client.on("part", (event) => {
-        logger.info(`${event.nick} left ${event.channel} on ${serverName} (User: ${userId})`);
+        log.cyan(`${event.nick} left ${event.channel} on ${serverName} (User: ${userId})`);
         // Potentially notify socketService
     });
     
     client.on("nick", (event) => {
-        logger.info(`${event.old_nick} is now known as ${event.new_nick} on ${serverName} (User: ${userId})`);
+        log.magenta(`${event.old_nick} is now known as ${event.new_nick} on ${serverName} (User: ${userId})`);
         // Potentially update stored nick or notify socketService
     });
 

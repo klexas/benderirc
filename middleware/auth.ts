@@ -2,15 +2,13 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import jwt from "jsonwebtoken";
-import logger from "mercedlogger";
+import { log } from "mercedlogger";
 
 const SECRET_KEY = process.env.SECRET_KEY ? process.env.SECRET_KEY : "SECRET_KEY";
 
 const isLoggedIn = async (req, res, next) => {
   try {
-    logger.log.magenta("Checking for token");
-    console.log(req.headers);
-    logger.log.magenta("Auth Header", req.headers);
+    log.magenta("Checking for token");
 
     if (!req.headers.authorization){
         res.status(401).json({ error: "No authorization header" });
@@ -38,7 +36,7 @@ const isAdmin = async (req, res, next) => {
   const token = req.query.admin;
   try {
       // TODO: check if user is admin
-      logger.log.magenta("ADMIN BEING PASSED THROUGH", token);
+      log.magenta("ADMIN BEING PASSED THROUGH", token);
       if(token === "admin") {
         next();
       }

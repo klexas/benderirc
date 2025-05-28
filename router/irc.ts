@@ -10,13 +10,14 @@ interface AuthenticatedRequest extends Request {
     user?: { // req.user is populated by isLoggedIn middleware
         _id: string;
         username: string; // Ensure this is present if your global type expects it
+        user: any; // This can be the user object or any other type you need
         // other user properties
     };
 }
 
 router.post('/connect', isLoggedIn, async (req: AuthenticatedRequest, res: Response) => {
     try {
-        const userId = req.user?._id;
+        const userId = req.user.user?._id;
         if (!userId) {
             return res.status(400).json({ message: 'User ID not found in token.' });
         }

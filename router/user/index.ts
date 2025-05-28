@@ -15,7 +15,7 @@ router.use(bodyParser.json());
 // GET /api/user/servers - Retrieve all IRC server configurations for the authenticated user
 router.get('/servers', isLoggedIn, async (req: Request, res: Response) => {
     try {
-        const user = await User.findById(req.user._id);
+        const user = await User.findById(req.user.user._id);
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
@@ -29,7 +29,7 @@ router.get('/servers', isLoggedIn, async (req: Request, res: Response) => {
 // POST /api/user/servers - Add a new IRC server configuration
 router.post('/servers', isLoggedIn, async (req: Request<{}, any, IIrcServer, ParsedQs, Record<string, any>>, res: Response) => {
     try {
-        const userId = req.user._id;
+        const userId = req.user.user._id;
         const serverConfig: IIrcServer = req.body;
 
         // Basic validation
@@ -63,7 +63,7 @@ router.post('/servers', isLoggedIn, async (req: Request<{}, any, IIrcServer, Par
 // PUT /api/user/servers/:serverName - Update an existing IRC server configuration
 router.put('/servers/:serverName', isLoggedIn, async (req: Request<{serverName: string}, any, IIrcServer, ParsedQs, Record<string, any>>, res: Response) => {
     try {
-        const userId = req.user._id;
+        const userId = req.user.user._id;
         const serverNameToUpdate = req.params.serverName;
         const updatedConfig: IIrcServer = req.body;
 
@@ -101,7 +101,7 @@ router.put('/servers/:serverName', isLoggedIn, async (req: Request<{serverName: 
 // DELETE /api/user/servers/:serverName - Delete an IRC server configuration
 router.delete('/servers/:serverName', isLoggedIn, async (req: Request<{serverName: string}, any, any, ParsedQs, Record<string, any>>, res: Response) => {
     try {
-        const userId = req.user._id;
+        const userId = req.user.user._id;
         const serverNameToDelete = req.params.serverName;
 
         const user = await User.findById(userId);
@@ -133,8 +133,8 @@ router.get('/', (req: Request<{}, any, any, ParsedQs, Record<string, any>>, res:
 router.get('/:id', isLoggedIn, (req: Request<{id: string}, any, any, ParsedQs, Record<string, any>>, res: Response) => {
     // This route is to get a specific user's details, could be admin only or self
     // For now, let's assume it's for self and uses req.user from isLoggedIn
-    if (req.user && req.user._id === req.params.id) {
-        res.send(`You are logged in as user ${req.params.id}.`);
+    if (req.user && req.user.user._id === req.params.id) {
+        res.send(`You are logged in as user ${req.user.user.username} (ID: ${req.params.id}).`);
     } else {
         // Potentially an admin trying to access or user ID mismatch
         // userService.GetUserById(req.params.id) ...
