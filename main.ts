@@ -55,7 +55,7 @@ app.use("/login", Express.static("public/login/login.html"));
 
 app.post("/join/dm/:nick", isLoggedIn, async (req, res) => {
   const nick = req.params.nick;
-  var dms = await MongooseDal.getDirectMessagesForUser(UserSettings.nick, nick);
+  var dms = await MongooseDal.getDirectMessagesForUser("tes", nick);
   res.send({ nick: nick, messages: dms?.messages || [] });
 });
 
@@ -75,7 +75,7 @@ app.post("/channel/join", isLoggedIn, async (req, res) => {
     active: true,
     name: req.body.channel,
     description: "Test Channel",
-    owner: UserSettings.nick, // TODO: This should ideally be the logged-in user's nick
+    owner: "UserSettings.nick", // TODO: This should ideally be the logged-in user's nick
     created_at: new Date(),
     updated_at: new Date(),
     messages: [],

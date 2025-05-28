@@ -1,12 +1,34 @@
 // Mongoose controller
 import mongoose from "mongoose";
+import { log } from "mercedlogger";
 import { Channel, DirectMessages, IChannel, IMessage } from "../models/channel";
 import { MessageQueue, IMessageQueue } from "../models/messageQueue";
 
 // MONGODB MONGOOS DAL CLASS
 const MongooseDal = {
     connect: async () => {
-        return await mongoose.connect("mongodb://127.0.0.1:27017/benderirc");
+        const defaultURI = "mongodb://127.0.0.1:27017/benderirc";
+        let connectionString = process.env.MONGODB_URI;
+
+        if (connectionString) {
+            log.red("MongoDB URI found in environment variables.");
+        } else {
+            connectionString = defaultURI;
+            log.red(`MONGODB_URI not set in environment. Using default: ${connectionString}`);
+        }
+
+        // Basic sanitization to avoid logging credentials if present in the URI
+        const safeLogURI = connectionString.includes('@') ? `mongodb://${connectionString.split('@').pop()}` : connectionString;
+        log.cyan(`Attempting to connect to MongoDB at ${safeLogURI}...`);
+        
+        try {
+            await mongoose.connect(connectionString);
+            log.cyan("MongoDB Connected Successfully to " + safeLogURI);
+        } catch (error) {
+            log.red("MongoDB Connection Error:", error.message);
+            // Re-throw the error or handle it as per application's error handling strategy
+            throw error; 
+        }
     },
     createChannel: async (channel: IChannel) => {
         // Create only if the channel doesn't have the same name

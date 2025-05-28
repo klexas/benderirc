@@ -1,5 +1,4 @@
 import express from 'express';
-import express from 'express';
 // import { channelRouter } from './channel'; // Not currently used
 import { nickservRouter } from './nickserv';
 import { chanservRouter } from './chanserv';
