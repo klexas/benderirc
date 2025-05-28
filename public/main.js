@@ -55,27 +55,6 @@ $(document).ready(function () {
         sendMessage();
     });
 
-    // Comment out or remove old connect logic
-    /*
-    $('#connect').click(()=>{
-        toggleLoggedIn();
-        $('#channel_name').text(selectedChannel);
-        axios.post('http://127.0.0.1:3000/connect').then((response)=>{ // This was the old connect endpoint
-            channels = response.data.state;
-            currentNick = response.data.nick;
-            $('#prefix_nick').text(currentNick);
-            $.each(channels, function (index, channel) {
-                $('#channels').append('<button id="channel_'+channel.name+'" class="bg-purple-600 hover:bg-red-700 text-white font-smallpy-2 px-4 rounded-lg" onclick="openChannel(\'' + channel.name + '\')" class="text-blue-500 hover:underline text-sm px-4 py-2 border-b-2 border-transparent hover:border-blue-500">#' + channel.name + '</button>');
-            });
-        }).catch((error)=>{
-            console.log(error);
-            if (error.response.status == 401) {
-                window.location.href = '/login';
-            }
-        });
-    });
-    */
-
     if ($('.logged-out#connect').is(':visible')) { 
         populateServerSelect();
     }
