@@ -1,7 +1,7 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-import { SaveUser, GetUser, UserModel } from '../models/userSchema';
+import User, { IUser } from '../models/user';
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { log } from "mercedlogger";
@@ -13,10 +13,10 @@ const register = async (req, callback) => {
     try {
         const { username, email, password } = req;
         const pw = await bcrypt.hash(password, 12);
-        const user = new UserModel(username, email, pw);
+        const user = new User({ username, email, password: pw });
         const token = createJWT(user);
         log.magenta("REGISTER", 'User Created Successfully' + username);
-        await SaveUser(user);
+        await user.save();
 
         callback(null, { token });
     } catch (error) {
@@ -28,8 +28,8 @@ const register = async (req, callback) => {
 const login = async (req, callback) => {
     try {
         const { username, password } = req;
-        const user = await GetUser(username);
-        if (await bcrypt.compare(password, user.password)) {
+        const user = await User.findOne({ username: username });
+        if (user && await bcrypt.compare(password, user.password)) {
             const token = createJWT(user);
             callback(null, { token: token, username: user.username });
         } else {
@@ -40,7 +40,7 @@ const login = async (req, callback) => {
     }
 }
 
-const createJWT = (user) => {
+const createJWT = (user: IUser) => {
     return jwt.sign(
         { user },
         SECRET_KEY,

@@ -10,7 +10,7 @@
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
         <script src="http://127.0.0.1:3000/socket.io/socket.io.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.1/axios.min.js"></script>
-        <script src="main.js"></script>
+       
     </head>
 
     <body class="bg-gray-800 text-white font-sans">
@@ -39,20 +39,35 @@
                 </div>
             </div>
             <div class="mb-6">
-                <div class="flex justify-between items-center mb-6">
+                <!-- Old "Advanced options" and "Join network" button container. Removing the button, keeping structure if needed -->
+                <!-- <div class="flex justify-between items-center mb-6">
                     <a href="#" class="text-blue-500 hover:underline text-sm">Advanced options</a>
-                    <button class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg" id="connect">Join network</button>
-                </div>
+                </div> -->
             </div>
+
+            <!-- New Server Selection and Connect Button -->
+            <div class="mb-4">
+                <label for="server-select" class="block mb-2 text-sm font-medium text-gray-300">Select a server:</label>
+                <select id="server-select" class="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
+                    <!-- Options will be populated by JavaScript -->
+                </select>
+                <p id="no-servers-message" class="text-sm text-gray-400 mt-2 hidden">No servers configured. Please add a server via "Manage Servers".</p>
+            </div>
+            <button id="connect-to-selected-server-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg w-full">Connect to Selected Server</button>
+            <!-- End New Server Selection -->
+
         </div>
 
         <!-- Top bar with connected channels -->
         <div class="logged-in fixed top-0 left-0 right-0 bg-gray-900 border-b border-gray-600 p-4 flex justify-between items-center hidden">
             <div class="flex space-x-4" id="channels"></div>
-            <!-- Join Channel button -->
-             <button class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg" onclick="toggleOpenChannel()">Join Channel</button>
-            <button class="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg" id="disconnect">Disconnect</button>
+            <div>
+                <button class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg mr-2" id="manage-servers-btn">Manage Servers</button>
+                <button class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg" onclick="toggleOpenChannel()">Join Channel</button>
+                <button class="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg ml-2" id="disconnect">Disconnect</button>
+            </div>
         </div>
+
         
         <!-- User DMS area -->
         <!-- <div class="logged-in fixed top-40 right-0 h-full w-64 bg-gray-900 border-l border-gray-600 p-4 overflow-y-auto hidden" id="dms">
@@ -81,6 +96,62 @@
                 <button class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg ml-2" id="message_send">Send</button>
             </div>
         </div>
+        <!-- Server Management Modal -->
+        <div id="server-management-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex justify-center items-center hidden z-50">
+            <div class="bg-gray-800 p-8 rounded-lg shadow-xl w-full max-w-2xl">
+                <h2 class="text-2xl mb-6 text-white">Manage IRC Servers</h2>
+                
+                <div id="server-list-container" class="mb-6 max-h-60 overflow-y-auto">
+                    <ul id="server-list" class="space-y-2">
+                        <!-- Server items will be injected here by JavaScript -->
+                    </ul>
+                </div>
+
+                <button id="add-server-btn" class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg mb-4">Add New Server</button>
+
+                <form id="server-form" class="hidden bg-gray-700 p-6 rounded-lg">
+                    <input type="hidden" id="server-original-name">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label for="server-name" class="block text-sm font-medium text-gray-300">Server Name*</label>
+                            <input type="text" id="server-name" name="server-name" required class="mt-1 block w-full bg-gray-600 border-gray-500 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-white">
+                        </div>
+                        <div>
+                            <label for="server-host" class="block text-sm font-medium text-gray-300">Host*</label>
+                            <input type="text" id="server-host" name="server-host" required class="mt-1 block w-full bg-gray-600 border-gray-500 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-white">
+                        </div>
+                        <div>
+                            <label for="server-port" class="block text-sm font-medium text-gray-300">Port*</label>
+                            <input type="number" id="server-port" name="server-port" required class="mt-1 block w-full bg-gray-600 border-gray-500 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-white">
+                        </div>
+                        <div>
+                            <label for="server-nick" class="block text-sm font-medium text-gray-300">Nick*</label>
+                            <input type="text" id="server-nick" name="server-nick" required class="mt-1 block w-full bg-gray-600 border-gray-500 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-white">
+                        </div>
+                        <div>
+                            <label for="server-password" class="block text-sm font-medium text-gray-300">Password</label>
+                            <input type="password" id="server-password" name="server-password" class="mt-1 block w-full bg-gray-600 border-gray-500 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-white">
+                        </div>
+                        <div>
+                            <label for="server-realname" class="block text-sm font-medium text-gray-300">Real Name</label>
+                            <input type="text" id="server-realname" name="server-realname" class="mt-1 block w-full bg-gray-600 border-gray-500 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-white">
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <label for="server-channels" class="block text-sm font-medium text-gray-300">Channels (comma-separated)</label>
+                        <input type="text" id="server-channels" name="server-channels" class="mt-1 block w-full bg-gray-600 border-gray-500 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-white">
+                    </div>
+                    <div class="flex justify-end space-x-3">
+                        <button type="button" id="cancel-server-form" class="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-lg">Cancel</button>
+                        <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg">Save Server</button>
+                    </div>
+                </form>
+                <button id="close-server-modal-btn" class="absolute top-4 right-4 text-gray-400 hover:text-gray-200">
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+            </div>
+        </div>
+        
         </body>
 
         <script>
@@ -95,5 +166,5 @@
             }
         });
         </script>
-
+ <script src="main.js"></script>
 </html>
