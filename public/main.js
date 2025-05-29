@@ -21,16 +21,16 @@ function sendMessage() {
 
     if(channels.find(channel => channel.name == selectedChannel) == undefined){
         const receiver = selectedChannel;
-        const message = $('#message').val();
+        const messageText = $('#message').val();
         addMessage({
             user: currentNick,
-            message: message
+            message: messageText
         });
 
         socket.emit('client:direct', {
             from: currentNick,
             to: receiver,
-            message: message
+            message: messageText
         });
     } else {
         addMessage({
@@ -38,6 +38,7 @@ function sendMessage() {
             message: message
         });
         socket.emit('client:message', {
+            from: currentNick,
             message: message,
             channel: selectedChannel
         });     
@@ -150,25 +151,52 @@ $(document).ready(function () {
 });
 
 socket.on("chat:message", function (data) {
-    var cleanChannel = data.channel;
-    data.channel[0] == "#"
-        ? (cleanChannel = data.channel.substring(1))
-        : (cleanChannel = data.channel);
+    // data: { type, source, target, sender, message }
+    var cleanChannel = data.source;
+    cleanChannel[0] == "#" ? (cleanChannel = cleanChannel.substring(1)) : (cleanChannel = cleanChannel);
 
     $("#channel_" + cleanChannel).removeClass("animate-shake");
     if (
-        data.channel == "AUTH" ||
+        data.source == "AUTH" ||
         cleanChannel == currentNick ||
         cleanChannel == selectedChannel
     )
-        addMessage(data);
+        addMessage({ user: data.sender, message: data.message });
     else notifyChannel(cleanChannel);
 });
 
 socket.on("chat:direct", function (data) {
-    console.log(data);
+    // data: { type, source, target, sender, message }
+    // Open or focus the DM context for the sender (source)
+    openDirectMessage(data.source);
     addDirectMessage(data);
 });
+
+function addDirectMessage(data) {
+    // data: { type, source, target, sender, message }
+    addMessage({
+        user: data.sender || data.source,
+        message: data.message
+    });
+
+    // using the source as the key on the dmUsers array, add the message to the user
+    var userIndex = dmUsers.findIndex(u => u && u.user == data.source);
+
+    if (userIndex > -1) {
+        dmUsers[userIndex].messages.push(data.message);
+    } else {
+        dmUsers.push({
+            user: data.source,
+            messages: [data.message]
+        });
+    }
+
+    // add the user to the dm list
+    $('#dms').empty();
+    $.each(dmUsers, function (index, user) {
+        $('#dms').append('<li class="flex items-center space-x-4" onclick="openDirectMessage(\'' + user.user + '\')"><i class="fas fa-user"></i><span class="text-sm font-medium">' + user.user + ' [' + user.messages.length + ']</span></li>');
+    });
+}
 
 socket.on('channel:list', function (data) {
     console.log(data);
@@ -221,31 +249,6 @@ socket.on('channel:joined', function (data) {
         });
     }
 });
-
-function addDirectMessage(user) {
-    addMessage({
-        user: user.from,
-        message: user.message
-    });
-
-    // using the user.from as the key on the dmUsers array, add the message to the user
-    var userIndex = dmUsers.findIndex(u => u && u.user == user.from);
-
-    if (userIndex > -1) {
-        dmUsers[userIndex].messages.push(user.message);
-    } else {
-        dmUsers.push({
-            user: user.from,
-            messages: [user.message]
-        });
-    }
-
-    // add the user to the dm list
-    $('#dms').empty();
-    $.each(dmUsers, function (index, user) {
-        $('#dms').append('<li class="flex items-center space-x-4" onclick="openDirectMessage(\'' + user.user + '\')"><i class="fas fa-user"></i><span class="text-sm font-medium">' + user.user + ' [' + user.messages.length + ']</span></li>');
-    });
-}
 
 function addMessage(message) {
     $('#messages').append('<div class="flex items-start space-x-4 mt-4"><div><div class="flex items-center space-x-2"><div class="text-sm font-medium">'+ message.user +'</div><div class="text-xs text-gray-400">10:30 AM</div></div><div class="mt-1 text-sm">' + message.message + '</div></div></div>');

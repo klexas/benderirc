@@ -1,7 +1,6 @@
 import { Client } from "irc-framework";
 import { Server } from "socket.io";
 import { IDirectMessages, IMessage } from "../models/channel";
-import UserSettings from "../config";
 import MongooseDal from "./mongo";
 import Utils from "./utils";
 
@@ -37,12 +36,10 @@ export class SocketService {
         var channel = "Global";
         if (message.channel) channel = message.channel;
 
-        // TODO: Need to find a better way to update the ircClient
-        // A factory pattern would be better after removing dependancy circular
         this.ircClient.say("#" + channel, message.message);
 
         const messageStore: IMessage = {
-          sender: UserSettings.nick, // TODO : get session user
+          sender: message.from || "unknown", // Use sender from payload
           message: message.message,
           created_at: new Date(),
         };
@@ -52,14 +49,15 @@ export class SocketService {
 
       // Direct Message
       socket.on("client:direct", async (message) => {
-        const owner = UserSettings.nick; // TODO : get session user
+        const from = message.from || "unknown";
+        const to = message.to || "unknown";
         const directMessage: IMessage = {
-            sender: owner,
-            message: message.message,
-            created_at: new Date(),
-          };
-          await MongooseDal.addDirectMessage(owner, message.to, directMessage);
-          this.ircClient.say(message.to, message.message);
+          sender: from,
+          message: message.message,
+          created_at: new Date(),
+        };
+        await MongooseDal.addDirectMessage(to, from, directMessage);
+        this.ircClient.say(to, message.message);
       });
 
     });
@@ -68,32 +66,36 @@ export class SocketService {
   
   async sendMessageAsync(channel: string, message: string, nick: string) {
     this.io.emit("chat:message", {
-        user: nick,
-        channel: channel,
-        message: message,
-      });
+      type: "channel",
+      source: channel, // channel name
+      target: channel, // for channels, source and target are the same
+      sender: nick,
+      message: message
+    });
 
-      const messageStore: IMessage = {
-        sender: nick,
-        message: message,
-        created_at: new Date(),
-      };
+    const messageStore: IMessage = {
+      sender: nick,
+      message: message,
+      created_at: new Date(),
+    };
 
-      await MongooseDal.addMessage(Utils.CleanChannel(channel),messageStore);
+    await MongooseDal.addMessage(Utils.CleanChannel(channel), messageStore);
   }
 
-  async sendDirectMessageAsync(message: string, nick: string) {
-    const owner = UserSettings.nick; // TODO : get session user
+  async sendDirectMessageAsync(message: string, fromNick: string, toNick: string) {
     const directMessage: IMessage = {
-        sender: nick,
-        message: message,
-        created_at: new Date(),
-      };
-      await MongooseDal.addDirectMessage(owner, nick, directMessage);
+      sender: fromNick,
+      message: message,
+      created_at: new Date(),
+    };
+    await MongooseDal.addDirectMessage(toNick, fromNick, directMessage);
 
-    console.log("sending direct message to " + nick);
+    console.log("sending direct message to " + toNick);
     this.io.emit("chat:direct", {
-      from: nick,
+      type: "direct",
+      source: fromNick, // sender
+      target: toNick, // recipient
+      sender: fromNick,
       message: message
     });
   }

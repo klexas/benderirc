@@ -118,7 +118,7 @@ export default class IrcService {
             // Consider prefixing channel with serverName if channels can have same name across servers
             await this.socketService.sendMessageAsync(event.target, event.message, event.nick);
         } else { // Direct message
-            await this.socketService.sendDirectMessageAsync(event.message, event.nick);
+            await this.socketService.sendDirectMessageAsync(event.message, event.nick, userId);
         }
       }
     );
