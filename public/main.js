@@ -101,11 +101,11 @@ $(document).ready(function () {
                     $('#channels').append('<button id="channel_'+ cleanChannelName +'" class="bg-purple-600 hover:bg-red-700 text-white font-small py-2 px-4 rounded-lg" onclick="openChannel(\'' + channelName + '\')">' + channelName + '</button>');
                 });
                 
-                if (channelsToJoin.length > 0) {
-                    openChannel(channelsToJoin[0]); 
-                } else {
-                    openChannel('ChanServ'); 
-                }
+                // if (channelsToJoin.length > 0) {
+                //     openChannel(channelsToJoin[0]); 
+                // } else {
+                //     openChannel('ChanServ'); 
+                // }
             })
             .catch(function(error) {
                 console.error('Error connecting to IRC server:', error);

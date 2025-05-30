@@ -37,7 +37,7 @@ const channelSchema = new Schema<IChannel>({
 
 const directMessageSchema = new Schema<IDirectMessages>({
     owner: { type: String, required: true },
-    external_user: { type: String, required: true },
+    external_user: { type: String, required: false },
     messages: { type: [new Schema<IMessage>({ sender: String, message: String, created_at: { type: Date, default: Date.now } })], default: [] },
     created_at: { type: Date, default: Date.now }
 });
